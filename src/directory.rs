@@ -72,3 +72,4 @@ pub fn fetch_runcode(path: &str) -> Result<MaysickCode, Error> {
         Err(Error::new(ErrorKind::Other, "\"run\" is not a directory."))
     }
 }
+

@@ -28,7 +28,7 @@ pub enum Token {
     // %
     ModOp, // <not-tested>
     // `mul`, `div`, etc...
-    BinaryFnOp(String), // <not-implemented>
+    BinaryFnOp(String), // <tested>
 
     // (
     LParen, // <not-tested>
@@ -86,7 +86,6 @@ named!(token_ident_str<CompleteStr, String>,
            (gen_token(c, l))
        )
 );
-
 named!(token_ident<CompleteStr, Token>,
        map!(token_ident_str, |s| Token::Ident(s))
 );
@@ -241,7 +240,7 @@ mod test {
         for s in pat {
             assert_eq!(
                 token_binfop(CompleteStr::from(s)),
-                Ok((empty, Token::BinaryFnOp(s[1..s.len()-1].to_string())))
+                Ok((empty, Token::BinaryFnOp(s[1..s.len() - 1].to_string())))
             );
         }
     }
