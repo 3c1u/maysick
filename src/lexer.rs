@@ -4,7 +4,6 @@
  * 2018 - murukea
  */
 
-use directory::MaysickCode;
 use nom::types::CompleteStr;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -54,7 +53,7 @@ pub enum Token {
     Line(Vec<Token>),
 
     // Block
-    Block(Vec<Token>), // <not-implemented>
+    Block(Vec<Token>),
 }
 
 // Eof parser
@@ -80,7 +79,18 @@ fn gen_token(c: CompleteStr, l: CompleteStr) -> String {
     s.push_str(l.0);
     s
 }
-fn parse_reserved_keyword(s: &str) -> Option<Token> { None }
+fn parse_reserved_keyword(s: &str) -> Option<Token> {
+    match s {
+        "fn"     => Some(Token::KFn),
+        "let"    => Some(Token::KLet),
+        "var"    => Some(Token::KVar),
+        "if"     => Some(Token::KIf),
+        "else"   => Some(Token::KElse),
+        "while"  => Some(Token::KWhile),
+        "return" => Some(Token::KReturn),
+        _ => None,
+    }
+}
 named!(token_ident_str<CompleteStr, String>,
        do_parse!(
            c: verify!(take!(1), |r: CompleteStr| check_ident(r.chars().nth(0), false)) >>
