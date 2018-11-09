@@ -6,6 +6,7 @@
 
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
+use nom::types::*;
 
 #[derive(Clone, Debug)]
 pub enum MaysickCode {
@@ -13,6 +14,7 @@ pub enum MaysickCode {
     Line(String),
 }
 
+use lexer::*;
 use self::MaysickCode::*;
 
 pub fn get_current_path() -> Result<Box<Path>, Error> {
@@ -36,13 +38,19 @@ fn fetch_dir_at(pbuf: &PathBuf) -> MaysickCode {
                 }
 
                 let token = p.file_name().unwrap().to_str().unwrap();
+
+                // verbose mode
+                println!("{:#?}", token_maysick_line(CompleteStr::from(token)).unwrap());
+
                 let child = fetch_dir_at(&p);
 
                 tokens.push(Line(token.to_string()));
 
                 match child {
                     Block(_) => tokens.push(child.clone()),
-                    Line(s) => tokens.push(Block(vec![Line(s.to_string())])),
+                    Line(s) => {
+                        tokens.push(Block(vec![Line(s.to_string())]))
+                    }
                 }
             }
         }

@@ -12,8 +12,15 @@ pub enum Token {
     // EOF
     Eof, // <tested>
 
-    // fn, let, var, if, else, while
-    Keyword(String), // <tested>
+    // fn, let, var, if, else, while, return
+    K_Fn,
+    K_Let,
+    K_Var,
+    K_If,
+    K_Else,
+    K_While,
+    K_Return,
+
     Ident(String),   // <tested>
 
     // integer.
@@ -21,6 +28,8 @@ pub enum Token {
     // 'yah string'
     String(String), // <tested>
 
+    // =
+    EqualOp,
     // +
     AddOp, // <not-tested>
     // -
@@ -53,14 +62,6 @@ named!(token_eof<CompleteStr, Token>,
        map!(eof!(), |_| Token::Eof)
 );
 
-// Keyword parser
-named!(token_keyword<CompleteStr, Token>,
-       map!(
-           alt!(tag!("fn") | tag!("let") | tag!("var") | tag!("if") | tag!("else") | tag!("while")),
-           |res| Token::Keyword(res.to_string())
-       )
-);
-
 // Identifier parser
 fn check_ident(oc: Option<char>, contains_number: bool) -> bool {
     match oc {
@@ -79,6 +80,7 @@ fn gen_token(c: CompleteStr, l: CompleteStr) -> String {
     s.push_str(l.0);
     s
 }
+fn parse_reserved_keyword(s: &str) -> Option<Token> { None }
 named!(token_ident_str<CompleteStr, String>,
        do_parse!(
            c: verify!(take!(1), |r: CompleteStr| check_ident(r.chars().nth(0), false)) >>
@@ -87,7 +89,13 @@ named!(token_ident_str<CompleteStr, String>,
        )
 );
 named!(token_ident<CompleteStr, Token>,
-       map!(token_ident_str, |s| Token::Ident(s))
+       map!(token_ident_str, |s| {
+           if let Some(k) = parse_reserved_keyword(s.as_str()) {
+               k
+           }else {
+               Token::Ident(s)
+           }
+       })
 );
 
 // Binary function operator parser
@@ -103,12 +111,13 @@ named!(token_binfop<CompleteStr, Token>,
 // Symbol parser
 named!(token_symbol<CompleteStr, Token>,
        alt!(
-           tag!("+") => { |_| Token::AddOp }  |
-           tag!("-") => { |_| Token::SubOp }  |
-           tag!("%") => { |_| Token::ModOp }  |
-           tag!("(") => { |_| Token::LParen } |
-           tag!(")") => { |_| Token::RParen } |
-           tag!(",") => { |_| Token::Comma }  |
+           tag!("=") => { |_| Token::EqualOp } |
+           tag!("+") => { |_| Token::AddOp }   |
+           tag!("-") => { |_| Token::SubOp }   |
+           tag!("%") => { |_| Token::ModOp }   |
+           tag!("(") => { |_| Token::LParen }  |
+           tag!(")") => { |_| Token::RParen }  |
+           tag!(",") => { |_| Token::Comma }   |
            tag!(":") => { |_| Token::Colon }
        )
 );
@@ -160,7 +169,6 @@ named!(token_integer<CompleteStr, Token>,
 
 named!(token_lex<CompleteStr, Token>,
        alt!(
-           token_keyword  |
            token_ident    |
            token_integer  |
            token_string   |
@@ -171,6 +179,14 @@ named!(token_lex<CompleteStr, Token>,
 
 named!(token_line<CompleteStr, Vec<Token>>,
        ws!(many0!(token_lex))
+);
+
+named!(pub token_maysick_line<CompleteStr, Vec<Token>>,
+       do_parse!(
+            token_integer >>
+            r: token_line >>
+            (r)
+          )
 );
 
 /* tests */
