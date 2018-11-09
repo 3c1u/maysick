@@ -13,13 +13,13 @@ pub enum Token {
     Eof, // <tested>
 
     // fn, let, var, if, else, while, return
-    K_Fn,
-    K_Let,
-    K_Var,
-    K_If,
-    K_Else,
-    K_While,
-    K_Return,
+    KFn,
+    KLet,
+    KVar,
+    KIf,
+    KElse,
+    KWhile,
+    KReturn,
 
     Ident(String),   // <tested>
 
