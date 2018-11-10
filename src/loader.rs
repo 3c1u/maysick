@@ -6,8 +6,10 @@
 
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
-use lexer::*;
 use nom::types::CompleteStr;
+
+use lexer::*;
+use token::*;
 
 pub fn get_current_path() -> Result<Box<Path>, Error> {
     let current_path = Path::new(".");
