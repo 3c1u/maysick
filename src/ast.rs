@@ -4,3 +4,60 @@
  * 2018 - murukea
  */
 
+pub type   Program = Block;
+pub type   Block   = Vec<Stmt>;
+pub type   Ident   = String;
+pub type   Type    = Ident;
+
+pub type Args = Vec<Ident>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Arg {
+    type_name: Type,
+    arg_name : Ident,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Stmt {
+    FnDef(Ident, Args, Ident),
+    Let(Ident, Expr),
+    Var(Ident, Expr),
+    Return(Expr),
+    Expr(Expr),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Prefix {
+    Positive,
+    Negative,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Infix {
+    EqualOp,
+    AddOp,
+    SubOp,
+    ModOp,
+    BinFnOp,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Expr {
+    Ident(Ident),
+    Literal(Literal),
+
+    Prefix(Prefix, Box<Expr>),
+    Infix(Infix, Box<Expr>, Box<Expr>),
+
+    FnCall(Ident, Vec<Expr>),
+
+    If(Box<Expr>, Block),
+    While(Box<Expr>, Block),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Literal {
+    Integer(i64),
+    String(String),
+    Bool(bool),
+}
