@@ -1,7 +1,7 @@
 /*
  * Maysick -- The Programming Language
  *
- * 2018 - murukea
+ * 2018 - murueka
  */
 
 pub type   Program = Block;
