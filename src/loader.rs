@@ -8,14 +8,7 @@ use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use nom::types::*;
 
-#[derive(Clone, Debug)]
-pub enum MaysickCode {
-    Block(Vec<MaysickCode>),
-    Line(String),
-}
-
 use lexer::*;
-use self::MaysickCode::*;
 
 pub fn get_current_path() -> Result<Box<Path>, Error> {
     let current_path = Path::new(".");
@@ -24,7 +17,7 @@ pub fn get_current_path() -> Result<Box<Path>, Error> {
     return Ok(Box::from(full_pathbuf?.as_path()));
 }
 
-fn fetch_dir_at(pbuf: &PathBuf) -> MaysickCode {
+/* fn fetch_dir_at(pbuf: &PathBuf) -> MaysickCode {
     let mut tokens: Vec<MaysickCode> = Vec::new();
 
     if let Ok(entries) = pbuf.read_dir() {
@@ -60,9 +53,9 @@ fn fetch_dir_at(pbuf: &PathBuf) -> MaysickCode {
         1 => tokens[0].clone(),
         _ => Block(tokens),
     }
-}
+} */
 
-pub fn fetch_runcode(path: &str) -> Result<MaysickCode, Error> {
+pub fn run(path: &str) -> Result<(), Error> {
     // 現在位置から"run"ディレクトリを探してみる
     let mut pbuf = PathBuf::from(path);
     pbuf.push("run");
@@ -71,7 +64,7 @@ pub fn fetch_runcode(path: &str) -> Result<MaysickCode, Error> {
     let is_dir = !pbuf.is_file();
     let exists = pbuf.exists();
     if is_dir && exists {
-        Ok(fetch_dir_at(&pbuf))
+        Ok(())
     } else if !exists {
         // 存在しないとき
         Err(Error::new(ErrorKind::Other, "\"run\" directory not found."))
