@@ -19,7 +19,7 @@ fn main() {
     let cpath = env::args().nth(1).unwrap_or(".".to_string());
 
     match loader::run(&cpath.as_str()) {
-        Ok(res) => println!("{:?}", res),
+        Ok(_)  => (),
         Err(_) => println!("Hello, world!"),
     }
 }

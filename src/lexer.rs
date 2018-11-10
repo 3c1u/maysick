@@ -38,6 +38,9 @@ pub enum Token {
     // `mul`, `div`, etc...
     BinaryFnOp(String), // <tested>
 
+    // ->
+    Arrow, // <not-tested>
+
     // (
     LParen, // <not-tested>
     // )
@@ -50,10 +53,11 @@ pub enum Token {
     Colon, // <not-tested>
 
     // Line
-    Line(Vec<Token>),
+    EndLine, //equivalent to ;
 
     // Block
-    Block(Vec<Token>),
+    LBlock, //equivalent to {
+    RBlock, //equivalent to }
 }
 
 // Eof parser
@@ -121,14 +125,15 @@ named!(token_binfop<CompleteStr, Token>,
 // Symbol parser
 named!(token_symbol<CompleteStr, Token>,
        alt!(
-           tag!("=") => { |_| Token::EqualOp } |
-           tag!("+") => { |_| Token::AddOp }   |
-           tag!("-") => { |_| Token::SubOp }   |
-           tag!("%") => { |_| Token::ModOp }   |
-           tag!("(") => { |_| Token::LParen }  |
-           tag!(")") => { |_| Token::RParen }  |
-           tag!(",") => { |_| Token::Comma }   |
-           tag!(":") => { |_| Token::Colon }
+           tag!("->") => { |_| Token::Arrow }   |
+           tag!("=")  => { |_| Token::EqualOp } |
+           tag!("+")  => { |_| Token::AddOp }   |
+           tag!("-")  => { |_| Token::SubOp }   |
+           tag!("%")  => { |_| Token::ModOp }   |
+           tag!("(")  => { |_| Token::LParen }  |
+           tag!(")")  => { |_| Token::RParen }  |
+           tag!(",")  => { |_| Token::Comma }   |
+           tag!(":")  => { |_| Token::Colon }
        )
 );
 

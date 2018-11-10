@@ -6,9 +6,8 @@
 
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
-use nom::types::*;
-
 use lexer::*;
+use nom::types::CompleteStr;
 
 pub fn get_current_path() -> Result<Box<Path>, Error> {
     let current_path = Path::new(".");
@@ -17,8 +16,8 @@ pub fn get_current_path() -> Result<Box<Path>, Error> {
     return Ok(Box::from(full_pathbuf?.as_path()));
 }
 
-/* fn fetch_dir_at(pbuf: &PathBuf) -> MaysickCode {
-    let mut tokens: Vec<MaysickCode> = Vec::new();
+fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
+    let mut tokens: Vec<Token> = Vec::new();
 
     if let Ok(entries) = pbuf.read_dir() {
         for entry in entries {
@@ -30,30 +29,46 @@ pub fn get_current_path() -> Result<Box<Path>, Error> {
                     continue;
                 }
 
-                let token = p.file_name().unwrap().to_str().unwrap();
+                let token = match p.file_name()
+                             .unwrap()
+                             .to_str() {
+                                 Some(t) => t,
+                                 None    => return Err(Error::new(ErrorKind::Other, "Cannot obtain file name."))
+                             };
 
-                // verbose mode
-                println!("{:#?}", token_maysick_line(CompleteStr::from(token)).unwrap());
+                let parsed = match token_maysick_line(CompleteStr::from(token)) {
+                    Ok((r, res)) => {
+                        if r.0.is_empty() {
+                            res
+                        } else {
+                            println!("Unconsumed token\"{}\"", r);
+                            return Err(Error::new(ErrorKind::Other, "Unconsumed token."))
+                        }
+                    },
+                    Err(e) => {
+                        println!("Error: {:?}", e);
+                        return Err(Error::new(ErrorKind::Other, "Failed to lex due to lexer error."))
+                    }
+                };
 
-                let child = fetch_dir_at(&p);
+                let child = get_token_from_directory(&p)?;
 
-                tokens.push(Line(token.to_string()));
-
-                match child {
-                    Block(_) => tokens.push(child.clone()),
-                    Line(s) => {
-                        tokens.push(Block(vec![Line(s.to_string())]))
+                tokens.extend(parsed);
+                
+                match child.len() {
+                    0 => tokens.push(Token::EndLine),
+                    _ => {
+                        tokens.push(Token::LBlock);
+                        tokens.extend(child);
+                        tokens.push(Token::RBlock);
                     }
                 }
             }
         }
     }
 
-    match tokens.len() {
-        1 => tokens[0].clone(),
-        _ => Block(tokens),
-    }
-} */
+    Ok(tokens)
+}
 
 pub fn run(path: &str) -> Result<(), Error> {
     // 現在位置から"run"ディレクトリを探してみる
@@ -64,6 +79,8 @@ pub fn run(path: &str) -> Result<(), Error> {
     let is_dir = !pbuf.is_file();
     let exists = pbuf.exists();
     if is_dir && exists {
+        let res = get_token_from_directory(&pbuf)?;
+        println!("{:#?}", res);
         Ok(())
     } else if !exists {
         // 存在しないとき
@@ -73,4 +90,3 @@ pub fn run(path: &str) -> Result<(), Error> {
         Err(Error::new(ErrorKind::Other, "\"run\" is not a directory."))
     }
 }
-
