@@ -12,13 +12,13 @@ pub enum Token {
     Eof, // <tested>
 
     // fn, let, var, if, else, while, return
-    KFn,
-    KLet,
-    KVar,
-    KIf,
-    KElse,
-    KWhile,
-    KReturn,
+    KFn, // <tested>
+    KLet, // <tested>
+    KVar, // <tested>
+    KIf, // <tested>
+    KElse, // <tested>
+    KWhile, // <tested>
+    KReturn, // <tested>
 
     Ident(String),   // <tested>
 
@@ -214,25 +214,15 @@ mod test {
     #[test]
     fn test_keyword() {
         let empty = CompleteStr::from("");
-        let pat = vec!["fn", "let", "var", "if", "else", "while"];
-        for s in pat {
+        let pat = vec!["fn", "let", "var", "if", "else", "while", "return"];
+        let res = vec![Token::KFn, Token::KLet, Token::KVar, Token::KIf, Token::KElse, Token::KWhile, Token::KReturn];
+        let cnt = pat.len();
+        for i in 0..cnt {
             assert_eq!(
-                token_keyword(CompleteStr::from(s)),
-                Ok((empty, Token::Keyword(s.to_string())))
+                token_ident(CompleteStr::from(pat[i])),
+                Ok((empty, res[i].clone()))
             );
         }
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_keyword_should_fail() {
-        let empty = CompleteStr::from("");
-        let s = "nomay";
-
-        assert_eq!(
-            token_keyword(CompleteStr::from(s)),
-            Ok((empty, Token::Keyword(s.to_string())))
-        );
     }
 
     #[test]
