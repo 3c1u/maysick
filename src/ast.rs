@@ -13,8 +13,8 @@ pub type Args = Vec<Ident>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Arg {
-    type_name: Type,
-    arg_name : Ident,
+    pub type_name : Type,
+    pub arg_name  : Ident,
 }
 
 #[derive(Clone, Debug, PartialEq)]
