@@ -99,9 +99,9 @@ named!(
 );
 named!(token_string<CompleteStr, Token>,
        do_parse!(
-           tag!("\'")             >>
+           tag!("'")              >>
            s: token_string_escape >>
-           tag!("\'")             >>
+           tag!("'")              >>
            (Token::String(s))
        )
 );

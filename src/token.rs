@@ -83,6 +83,14 @@ impl<'a> Tokens<'a> {
     pub fn from_slice(s: &'a [Token]) -> Self {
         Tokens { tokens: s }
     }
+
+    pub fn empty() -> Self {
+        Tokens { tokens: &[] }
+    }
+
+    pub fn item_at(&self, i: usize) -> Token {
+        self.tokens[i].clone()
+    }
 }
 
 impl<'a> AtEof for Tokens<'a> {
@@ -104,7 +112,7 @@ impl<'a> InputTake for Tokens<'a> {
 
     fn take_split(&self, count: usize) -> (Self, Self) {
         let (p, s) = self.tokens.split_at(count);
-        (Tokens::from_slice(p), Tokens::from_slice(s))
+        (Tokens::from_slice(s), Tokens::from_slice(p))
     }
 }
 
