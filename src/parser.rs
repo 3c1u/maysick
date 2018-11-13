@@ -164,6 +164,7 @@ mod test {
         let tokens = vec![
             Token::KReturn,
             Token::Ident("retval".to_string()),
+            Token::EndLine,
         ];
         assert_eq!(
             parse_stmt_return(Tokens::new(&tokens)),
