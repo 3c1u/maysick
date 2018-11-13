@@ -110,8 +110,6 @@ named!(token_string<CompleteStr, Token>,
 named!(token_integer<CompleteStr, Token>,
        map!(
            alt!(
-               tag!("MAX_INT")   => { |_| i64::max_value() } |
-               tag!("MIN_INT")   => { |_| i64::min_value() } |
                do_parse!(
                    tag!("0x") >>
                    num: map_res!(nom::hex_digit, |res: CompleteStr| i64::from_str_radix(res.0, 16)) >>
@@ -228,8 +226,8 @@ mod test {
     #[test]
     fn test_numbers() {
         let empty = CompleteStr::from("");
-        let pat = vec!["MAX_INT", "MIN_INT", "0123", "0xCafeBaBE", "1123"];
-        let res: Vec<i64> = vec![i64::max_value(), i64::min_value(), 83, 0xCAFEBABE, 1123];
+        let pat = vec!["0123", "0xCafeBaBE", "1123"];
+        let res: Vec<i64> = vec![83, 0xCAFEBABE, 1123];
         let cnt = pat.len();
         for i in 0..cnt {
             assert_eq!(
