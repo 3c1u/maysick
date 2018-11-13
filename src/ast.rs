@@ -19,10 +19,10 @@ pub struct Arg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Stmt {
-    FnDef(Ident, Args, Ident),
-    Let(Ident, Expr),
-    Var(Ident, Expr),
-    Return(Expr),
+    FnDef(Ident, Args, Block),
+    Let(Ident, Option<Type>, Expr),
+    Var(Ident, Option<Type>, Expr),
+    Return(Option<Expr>),
     Expr(Expr),
 }
 
