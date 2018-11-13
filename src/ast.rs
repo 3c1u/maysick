@@ -4,17 +4,17 @@
  * 2018 - murueka
  */
 
-pub type   Program = Block;
-pub type   Block   = Vec<Stmt>;
-pub type   Ident   = String;
-pub type   Type    = Ident;
+pub type Program = Block;
+pub type Block = Vec<Stmt>;
+pub type Ident = String;
+pub type Type = Ident;
 
 pub type Args = Vec<Ident>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Arg {
-    pub type_name : Type,
-    pub arg_name  : Ident,
+    pub type_name: Type,
+    pub arg_name: Ident,
 }
 
 #[derive(Clone, Debug, PartialEq)]

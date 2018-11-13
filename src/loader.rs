@@ -4,9 +4,9 @@
  * 2018 - murueka
  */
 
+use nom::types::CompleteStr;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
-use nom::types::CompleteStr;
 
 use lexer::*;
 use token::*;
@@ -31,12 +31,10 @@ fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
                     continue;
                 }
 
-                let token = match p.file_name()
-                             .unwrap()
-                             .to_str() {
-                                 Some(t) => t,
-                                 None    => return Err(Error::new(ErrorKind::Other, "Cannot obtain file name."))
-                             };
+                let token = match p.file_name().unwrap().to_str() {
+                    Some(t) => t,
+                    None => return Err(Error::new(ErrorKind::Other, "Cannot obtain file name.")),
+                };
 
                 let parsed = match token_maysick_line(CompleteStr::from(token)) {
                     Ok((r, res)) => {
@@ -44,19 +42,22 @@ fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
                             res
                         } else {
                             println!("Unconsumed token\"{}\"", r);
-                            return Err(Error::new(ErrorKind::Other, "Unconsumed token."))
+                            return Err(Error::new(ErrorKind::Other, "Unconsumed token."));
                         }
-                    },
+                    }
                     Err(e) => {
                         println!("Error: {:?}", e);
-                        return Err(Error::new(ErrorKind::Other, "Failed to lex due to lexer error."))
+                        return Err(Error::new(
+                            ErrorKind::Other,
+                            "Failed to lex due to lexer error.",
+                        ));
                     }
                 };
 
                 let child = get_token_from_directory(&p)?;
 
                 tokens.extend(parsed);
-                
+
                 match child.len() {
                     0 => tokens.push(Token::EndLine),
                     _ => {

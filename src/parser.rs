@@ -107,7 +107,7 @@ named!(pub parse_stmt_return<Tokens, Stmt>,
             apply!(take_token, Token::EndLine) >>
             (
                 Stmt::Return(retval)
-            )  
+            )
     )
 );
 
@@ -168,16 +168,13 @@ mod test {
         ];
         assert_eq!(
             parse_stmt_return(Tokens::new(&tokens)),
-            Ok(
-                (Tokens::empty(),
-                 Stmt::Return(
-                     Some(Expr::Ident("retval".to_string()))
-                     )
-                )
-            )
+            Ok((
+                Tokens::empty(),
+                Stmt::Return(Some(Expr::Ident("retval".to_string())))
+            ))
         );
     }
-    
+
     #[test]
     fn test_parser() {
         let tokens = vec![

@@ -77,7 +77,9 @@ pub struct Tokens<'a> {
 
 impl<'a> Tokens<'a> {
     pub fn new(v: &'a Vec<Token>) -> Self {
-        Tokens { tokens: v.as_slice() }
+        Tokens {
+            tokens: v.as_slice(),
+        }
     }
 
     pub fn from_slice(s: &'a [Token]) -> Self {
@@ -117,9 +119,9 @@ impl<'a> InputTake for Tokens<'a> {
 }
 
 impl<'a> InputIter for Tokens<'a> {
-    type Item     = &'a Token;
-    type RawItem  = Token;
-    type Iter     = Enumerate<std::slice::Iter<'a, Token>>;
+    type Item = &'a Token;
+    type RawItem = Token;
+    type Iter = Enumerate<std::slice::Iter<'a, Token>>;
     type IterElem = std::slice::Iter<'a, Token>;
 
     fn iter_indices(&self) -> Enumerate<std::slice::Iter<'a, Token>> {

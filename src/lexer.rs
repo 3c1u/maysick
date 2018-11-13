@@ -32,12 +32,12 @@ fn gen_token(c: CompleteStr, l: CompleteStr) -> String {
 }
 fn parse_reserved_keyword(s: &str) -> Option<Token> {
     match s {
-        "fn"     => Some(Token::KFn),
-        "let"    => Some(Token::KLet),
-        "var"    => Some(Token::KVar),
-        "if"     => Some(Token::KIf),
-        "else"   => Some(Token::KElse),
-        "while"  => Some(Token::KWhile),
+        "fn" => Some(Token::KFn),
+        "let" => Some(Token::KLet),
+        "var" => Some(Token::KVar),
+        "if" => Some(Token::KIf),
+        "else" => Some(Token::KElse),
+        "while" => Some(Token::KWhile),
         "return" => Some(Token::KReturn),
         _ => None,
     }
@@ -165,7 +165,15 @@ mod test {
     fn test_keyword() {
         let empty = CompleteStr::from("");
         let pat = vec!["fn", "let", "var", "if", "else", "while", "return"];
-        let res = vec![Token::KFn, Token::KLet, Token::KVar, Token::KIf, Token::KElse, Token::KWhile, Token::KReturn];
+        let res = vec![
+            Token::KFn,
+            Token::KLet,
+            Token::KVar,
+            Token::KIf,
+            Token::KElse,
+            Token::KWhile,
+            Token::KReturn,
+        ];
         let cnt = pat.len();
         for i in 0..cnt {
             assert_eq!(
