@@ -107,7 +107,7 @@ named!(pub parse_stmt_return<Tokens, Stmt>,
             apply!(take_token, Token::EndLine) >>
             (
                 Stmt::Return(retval)
-            )  
+            )
     )
 );
 
@@ -154,10 +154,7 @@ named!(pub parse_program<Tokens, Program>, many0!(parse_stmt));
 
 #[cfg(test)]
 mod test {
-    use ast::*;
-    use lexer::*;
     use parser::*;
-    use token::*;
 
     #[test]
     fn test_stmt_return() {
@@ -177,7 +174,7 @@ mod test {
             )
         );
     }
-    
+
     #[test]
     fn test_parser() {
         let tokens = vec![
@@ -201,7 +198,32 @@ mod test {
             Token::EndLine,
             Token::RBlock,
         ];
+        let res = vec![
+            Stmt::FnDef("main".to_string(),
+                        vec![],
+                        vec![
+                            Stmt::Let("retval".to_string(), None,
+                                      Expr::Literal(
+                                          Literal::Integer(0)
+                                      )
+                            ),
+                            Stmt::Expr(
+                                Expr::FnCall("println".to_string(),
+                                             vec![
+                                                 Expr::Literal(
+                                                     Literal::String("Hello, world!".to_string())
+                                                 )
+                                             ])
+                            ),
+                            Stmt::Return(Some(Expr::Ident("retval".to_string())))
+                        ]
+            )
+        ];
+        if let Ok((_, pres)) = parse_program(Tokens::new(&tokens)) {
+            assert_eq!(pres, res);
+        } else {
+            panic!("Failed to parse.");
+        }
 
-        println!("{:#?}", parse_program(Tokens::new(&tokens)));
     }
 }
