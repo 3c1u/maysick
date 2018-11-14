@@ -34,8 +34,12 @@ named!(parse_expr<Tokens, Expr>,
             apply!(take_token, Token::RParen) >>
             (r)
         ) |
-        parse_expr_ident |
-        parse_expr_literal
+        // parse_expr_prefix |
+        // parse_expr_infix  |
+        // parse_expr_if     |
+        // parse_expr_while  |
+        parse_expr_ident   |
+        parse_expr_literal |
         )
 );
 
@@ -96,6 +100,7 @@ named!(pub parse_stmt<Tokens, Stmt>,
         parse_stmt_return |
         parse_stmt_fndef  |
         parse_stmt_let    |
+        parse_stmt_var    |
         parse_stmt_expr
     )
 );
@@ -130,6 +135,19 @@ named!(pub parse_stmt_fndef<Tokens, Stmt>,
 named!(pub parse_stmt_let<Tokens, Stmt>,
     do_parse!(
             apply!(take_token, Token::KLet)    >>
+            idt: parse_ident                   >>
+            apply!(take_token, Token::EqualOp) >>
+            val: parse_expr                    >>
+            apply!(take_token, Token::EndLine) >>
+            (
+                Stmt::Let(idt, None, val)
+            )
+    )
+);
+
+named!(pub parse_stmt_var<Tokens, Stmt>,
+    do_parse!(
+            apply!(take_token, Token::KVar)    >>
             idt: parse_ident                   >>
             apply!(take_token, Token::EqualOp) >>
             val: parse_expr                    >>
