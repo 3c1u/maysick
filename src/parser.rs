@@ -35,12 +35,53 @@ named!(parse_expr<Tokens, Expr>,
             (r)
         ) |
         // parse_expr_prefix |
-        // parse_expr_infix  |
+        parse_expr_infix  |
         // parse_expr_if     |
         // parse_expr_while  |
         parse_expr_ident   |
-        parse_expr_literal |
+        parse_expr_literal
         )
+);
+
+named!(parse_expr_left<Tokens, Expr>,
+    alt!(
+        parse_expr_fncall |
+        do_parse!(
+            apply!(take_token, Token::LParen) >>
+            r: parse_expr >>
+            apply!(take_token, Token::RParen) >>
+            (r)
+        ) |
+        // parse_expr_prefix |
+        // parse_expr_if     |
+        // parse_expr_while  |
+        parse_expr_ident   |
+        parse_expr_literal
+        )
+);
+
+
+named_args!(parse_infix_op(op: Token)<Tokens, (Expr, Expr)>,
+            do_parse!(
+              left: parse_expr_left  >>
+              apply!(take_token, op) >>
+              right: parse_expr      >>
+              ((left, right))
+            )
+);
+
+named!(parse_expr_infix<Tokens, Expr>,
+    alt!(
+        map!(apply!(parse_infix_op, Token::ModOp), |(left, right): (Expr, Expr)| {
+            Expr::Infix(Infix::ModOp, Box::new(left), Box::new(right))
+        }) |
+        map!(apply!(parse_infix_op, Token::AddOp), |(left, right): (Expr, Expr)| {
+            Expr::Infix(Infix::AddOp, Box::new(left), Box::new(right))
+        }) |
+        map!(apply!(parse_infix_op, Token::SubOp), |(left, right): (Expr, Expr)| {
+            Expr::Infix(Infix::SubOp, Box::new(left), Box::new(right))
+        })
+    )
 );
 
 named!(parse_ident<Tokens, Ident>,
@@ -172,7 +213,9 @@ named!(pub parse_program<Tokens, Program>, many0!(parse_stmt));
 
 #[cfg(test)]
 mod test {
+    use ast::*;
     use parser::*;
+    use token::*;
 
     #[test]
     fn test_stmt_return() {
