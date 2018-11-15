@@ -26,13 +26,13 @@ pub enum Stmt {
     Expr(Expr),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Prefix {
     Positive,
     Negative,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Infix {
     EqualOp,
     AddOp,

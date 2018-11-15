@@ -35,7 +35,7 @@ named!(parse_expr<Tokens, Expr>,
             (r)
         ) |
         // parse_expr_prefix |
-        parse_expr_infix  |
+        apply!(parse_expr_infix, 100) | // TODO `f`の実装
         // parse_expr_if     |
         // parse_expr_while  |
         parse_expr_ident   |
@@ -43,7 +43,7 @@ named!(parse_expr<Tokens, Expr>,
         )
 );
 
-named!(parse_expr_left<Tokens, Expr>,
+named_args!(parse_expr_left(n: i64)<Tokens, Expr>,
     alt!(
         parse_expr_fncall |
         do_parse!(
@@ -52,6 +52,7 @@ named!(parse_expr_left<Tokens, Expr>,
             apply!(take_token, Token::RParen) >>
             (r)
         ) |
+        apply!(parse_expr_infix, n) |
         // parse_expr_prefix |
         // parse_expr_if     |
         // parse_expr_while  |
@@ -61,26 +62,56 @@ named!(parse_expr_left<Tokens, Expr>,
 );
 
 
-named_args!(parse_infix_op(op: Token)<Tokens, (Expr, Expr)>,
+named_args!(parse_infix_op(op: Token, itype: Infix, priority: i64, n: i64)<Tokens, Expr>,
             do_parse!(
-              left: parse_expr_left  >>
-              apply!(take_token, op) >>
-              right: parse_expr      >>
-              ((left, right))
+              verify!(take!(0), |_| { priority <= n })    >>
+              left: apply!(parse_expr_left, priority - 1) >>
+              res : apply!(parse_infix_op_t,
+                           op,
+                           itype,
+                           priority,
+                           priority,
+                           left) >>
+              (res)
             )
 );
 
-named!(parse_expr_infix<Tokens, Expr>,
+named_args!(parse_infix_op_t(op: Token, itype: Infix, priority: i64, n: i64, left: Expr)<Tokens, Expr>,
+            alt!(
+                do_parse!(
+                    verify!(take!(0), |_| { priority == n } ) >>
+                    apply!(take_token, op.clone()) >>
+                    comb: map!(apply!(parse_expr_left, priority - 1),
+                               |right| { Expr::Infix(itype, Box::new(left.clone()), Box::new(right)) })
+                    >>
+                    res : opt!(apply!(parse_infix_op_t_w, n, comb.clone())) >>
+                    (match res {
+                        Some(r) => r,
+                        None    => comb,
+                    })
+                )
+            )
+);
+
+named_args!(parse_infix_op_t_w(n: i64, left: Expr)<Tokens, Expr>,
     alt!(
-        map!(apply!(parse_infix_op, Token::ModOp), |(left, right): (Expr, Expr)| {
-            Expr::Infix(Infix::ModOp, Box::new(left), Box::new(right))
-        }) |
-        map!(apply!(parse_infix_op, Token::AddOp), |(left, right): (Expr, Expr)| {
-            Expr::Infix(Infix::AddOp, Box::new(left), Box::new(right))
-        }) |
-        map!(apply!(parse_infix_op, Token::SubOp), |(left, right): (Expr, Expr)| {
-            Expr::Infix(Infix::SubOp, Box::new(left), Box::new(right))
-        })
+        apply!(parse_infix_op_t,
+               Token::AddOp, Infix::AddOp, 2, n, left.clone()) |
+        apply!(parse_infix_op_t,
+               Token::SubOp, Infix::SubOp, 2, n, left.clone()) |
+        apply!(parse_infix_op_t,
+               Token::ModOp, Infix::ModOp, 1, n, left.clone())
+    )
+);
+
+named_args!(parse_expr_infix(n: i64)<Tokens, Expr>,
+    alt!(
+        apply!(parse_infix_op,
+               Token::AddOp, Infix::AddOp, 2, n) |
+        apply!(parse_infix_op,
+               Token::SubOp, Infix::SubOp, 2, n) |
+        apply!(parse_infix_op,
+               Token::ModOp, Infix::ModOp, 1, n)
     )
 );
 

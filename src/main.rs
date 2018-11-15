@@ -10,7 +10,7 @@ extern crate nom;
 use std::env;
 
 pub mod ast;
-pub mod eval;
+// pub mod eval;
 pub mod lexer;
 pub mod loader;
 pub mod parser;
