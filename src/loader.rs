@@ -8,6 +8,7 @@ use nom::types::CompleteStr;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
+use parser::*;
 use lexer::*;
 use token::*;
 
@@ -82,8 +83,9 @@ pub fn run(path: &str) -> Result<(), Error> {
     let is_dir = !pbuf.is_file();
     let exists = pbuf.exists();
     if is_dir && exists {
-        let res = get_token_from_directory(&pbuf)?;
-        println!("{:#?}", res);
+        let tokens = get_token_from_directory(&pbuf)?;
+        let prog = parse_program(Tokens::new(&tokens));
+        println!("{:#?}", prog);
         Ok(())
     } else if !exists {
         // 存在しないとき

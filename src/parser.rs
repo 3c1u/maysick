@@ -34,9 +34,54 @@ named!(parse_expr<Tokens, Expr>,
             apply!(take_token, Token::RParen) >>
             (r)
         ) |
-        parse_expr_ident |
+        // parse_expr_prefix |
+        parse_expr_infix  |
+        // parse_expr_if     |
+        // parse_expr_while  |
+        parse_expr_ident   |
         parse_expr_literal
         )
+);
+
+named!(parse_expr_left<Tokens, Expr>,
+    alt!(
+        parse_expr_fncall |
+        do_parse!(
+            apply!(take_token, Token::LParen) >>
+            r: parse_expr >>
+            apply!(take_token, Token::RParen) >>
+            (r)
+        ) |
+        // parse_expr_prefix |
+        // parse_expr_if     |
+        // parse_expr_while  |
+        parse_expr_ident   |
+        parse_expr_literal
+        )
+);
+
+
+named_args!(parse_infix_op(op: Token)<Tokens, (Expr, Expr)>,
+            do_parse!(
+              left: parse_expr_left  >>
+              apply!(take_token, op) >>
+              right: parse_expr      >>
+              ((left, right))
+            )
+);
+
+named!(parse_expr_infix<Tokens, Expr>,
+    alt!(
+        map!(apply!(parse_infix_op, Token::ModOp), |(left, right): (Expr, Expr)| {
+            Expr::Infix(Infix::ModOp, Box::new(left), Box::new(right))
+        }) |
+        map!(apply!(parse_infix_op, Token::AddOp), |(left, right): (Expr, Expr)| {
+            Expr::Infix(Infix::AddOp, Box::new(left), Box::new(right))
+        }) |
+        map!(apply!(parse_infix_op, Token::SubOp), |(left, right): (Expr, Expr)| {
+            Expr::Infix(Infix::SubOp, Box::new(left), Box::new(right))
+        })
+    )
 );
 
 named!(parse_ident<Tokens, Ident>,
@@ -96,6 +141,7 @@ named!(pub parse_stmt<Tokens, Stmt>,
         parse_stmt_return |
         parse_stmt_fndef  |
         parse_stmt_let    |
+        parse_stmt_var    |
         parse_stmt_expr
     )
 );
@@ -140,6 +186,19 @@ named!(pub parse_stmt_let<Tokens, Stmt>,
     )
 );
 
+named!(pub parse_stmt_var<Tokens, Stmt>,
+    do_parse!(
+            apply!(take_token, Token::KVar)    >>
+            idt: parse_ident                   >>
+            apply!(take_token, Token::EqualOp) >>
+            val: parse_expr                    >>
+            apply!(take_token, Token::EndLine) >>
+            (
+                Stmt::Let(idt, None, val)
+            )
+    )
+);
+
 named!(pub parse_stmt_expr<Tokens, Stmt>,
     do_parse!(
             val: parse_expr >>
@@ -155,7 +214,6 @@ named!(pub parse_program<Tokens, Program>, many0!(parse_stmt));
 #[cfg(test)]
 mod test {
     use ast::*;
-    use lexer::*;
     use parser::*;
     use token::*;
 
@@ -198,7 +256,32 @@ mod test {
             Token::EndLine,
             Token::RBlock,
         ];
+        let res = vec![
+            Stmt::FnDef("main".to_string(),
+                        vec![],
+                        vec![
+                            Stmt::Let("retval".to_string(), None,
+                                      Expr::Literal(
+                                          Literal::Integer(0)
+                                      )
+                            ),
+                            Stmt::Expr(
+                                Expr::FnCall("println".to_string(),
+                                             vec![
+                                                 Expr::Literal(
+                                                     Literal::String("Hello, world!".to_string())
+                                                 )
+                                             ])
+                            ),
+                            Stmt::Return(Some(Expr::Ident("retval".to_string())))
+                        ]
+            )
+        ];
+        if let Ok((_, pres)) = parse_program(Tokens::new(&tokens)) {
+            assert_eq!(pres, res);
+        } else {
+            panic!("Failed to parse.");
+        }
 
-        println!("{:#?}", parse_program(Tokens::new(&tokens)));
     }
 }
