@@ -8,8 +8,8 @@ use nom::types::CompleteStr;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
-use parser::*;
 use lexer::*;
+use parser::*;
 use token::*;
 
 pub fn get_current_path() -> Result<Box<Path>, Error> {

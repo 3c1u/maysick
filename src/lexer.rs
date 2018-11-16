@@ -156,13 +156,13 @@ mod test {
     use lexer::*;
 
     #[test]
-    fn test_eof() {
+    fn t_eof() {
         let empty = CompleteStr::from("");
         assert_eq!(token_eof(empty), Ok((empty, Token::Eof)));
     }
 
     #[test]
-    fn test_keyword() {
+    fn t_keyword() {
         let empty = CompleteStr::from("");
         let pat = vec!["fn", "let", "var", "if", "else", "while", "return"];
         let res = vec![
@@ -184,7 +184,7 @@ mod test {
     }
 
     #[test]
-    fn test_ident() {
+    fn t_ident() {
         let empty = CompleteStr::from("");
         let pat = vec!["nomay", "nomay1123", "ManoChan", "$php_is_shit"];
         for s in pat {
@@ -197,7 +197,7 @@ mod test {
 
     #[test]
     #[should_panic]
-    fn test_ident_should_fail() {
+    fn t_ident_should_fail() {
         let empty = CompleteStr::from("");
         let s = "1123nomay";
 
@@ -208,7 +208,7 @@ mod test {
     }
 
     #[test]
-    fn test_binfop() {
+    fn t_binfop() {
         let empty = CompleteStr::from("");
         let pat = vec!["`div`", "`mul`", "`nomay`"];
         for s in pat {
@@ -221,7 +221,7 @@ mod test {
 
     #[test]
     #[should_panic]
-    fn test_binfop_should_fail() {
+    fn t_binfop_should_fail() {
         let empty = CompleteStr::from("");
         let s = "``";
 
@@ -232,7 +232,7 @@ mod test {
     }
 
     #[test]
-    fn test_numbers() {
+    fn t_numbers() {
         let empty = CompleteStr::from("");
         let pat = vec!["0123", "0xCafeBaBE", "1123"];
         let res: Vec<i64> = vec![83, 0xCAFEBABE, 1123];
@@ -246,7 +246,7 @@ mod test {
     }
 
     #[test]
-    fn test_numbers_with_residue() {
+    fn t_numbers_with_residue() {
         let empty = CompleteStr::from("nomay");
         let pat = vec!["01123nomay", "0xCAFEBABEnomay", "1123nomay"];
         let res: Vec<i64> = vec![595, 0xCAFEBABE, 1123];
@@ -261,7 +261,7 @@ mod test {
 
     #[test]
     #[should_panic]
-    fn test_numbers_should_panic() {
+    fn t_numbers_should_panic() {
         let empty = CompleteStr::from("98nomay");
         let pat = vec!["0112398nomay", "nomay"];
         let res: Vec<i64> = vec![0112398, 0];
@@ -275,7 +275,7 @@ mod test {
     }
 
     #[test]
-    fn test_string() {
+    fn t_string() {
         assert_eq!(
             token_string(CompleteStr::from("'nomay\\' のーめい'")),
             Ok((
