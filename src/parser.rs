@@ -27,6 +27,7 @@ named_args!(take_token(token: Token)<Tokens, Token>,
 // Expr
 named!(parse_expr<Tokens, Expr>,
     alt!(
+        apply!(parse_expr_infix, 100) | // TODO `f`の実装
         parse_expr_fncall |
         do_parse!(
             apply!(take_token, Token::LParen) >>
@@ -35,16 +36,38 @@ named!(parse_expr<Tokens, Expr>,
             (r)
         ) |
         // parse_expr_prefix |
-        apply!(parse_expr_infix, 100) | // TODO `f`の実装
-        // parse_expr_if     |
-        // parse_expr_while  |
+        parse_expr_if     |
+        parse_expr_while  |
         parse_expr_ident   |
         parse_expr_literal
         )
 );
 
+named!(parse_expr_if<Tokens, Expr>,
+       do_parse!(
+               apply!(take_token, Token::KIf)    >>
+               cond: parse_expr                  >>
+               apply!(take_token, Token::LBlock) >>
+               prog: parse_program               >>
+               apply!(take_token, Token::RBlock) >>
+               (Expr::If(Box::new(cond), prog))
+       )
+);
+
+named!(parse_expr_while<Tokens, Expr>,
+       do_parse!(
+           apply!(take_token, Token::KWhile)     >>
+               cond: parse_expr                  >>
+               apply!(take_token, Token::LBlock) >>
+               prog: parse_program               >>
+               apply!(take_token, Token::RBlock) >>
+               (Expr::While(Box::new(cond), prog))
+       )
+);
+
 named_args!(parse_expr_left(n: i64)<Tokens, Expr>,
     alt!(
+        apply!(parse_expr_infix, n) |
         parse_expr_fncall |
         do_parse!(
             apply!(take_token, Token::LParen) >>
@@ -52,10 +75,9 @@ named_args!(parse_expr_left(n: i64)<Tokens, Expr>,
             apply!(take_token, Token::RParen) >>
             (r)
         ) |
-        apply!(parse_expr_infix, n) |
         // parse_expr_prefix |
-        // parse_expr_if     |
-        // parse_expr_while  |
+        parse_expr_if     |
+        parse_expr_while  |
         parse_expr_ident   |
         parse_expr_literal
         )
@@ -172,7 +194,8 @@ named!(pub parse_stmt<Tokens, Stmt>,
         parse_stmt_fndef  |
         parse_stmt_let    |
         parse_stmt_var    |
-        parse_stmt_expr
+        parse_stmt_expr   |
+        parse_stmt_blocked_expr
     )
 );
 
@@ -229,6 +252,17 @@ named!(pub parse_stmt_var<Tokens, Stmt>,
     )
 );
 
+named!(pub parse_stmt_blocked_expr<Tokens, Stmt>,
+       do_parse!(
+           v: alt!(
+               parse_expr_if | parse_expr_while
+           ) >>
+           (
+               Stmt::Expr(v)
+           )
+       )
+);
+
 named!(pub parse_stmt_expr<Tokens, Stmt>,
     do_parse!(
             val: parse_expr >>
@@ -258,18 +292,13 @@ mod test {
         ];
         assert_eq!(
             parse_expr(Tokens::new(&tokens)),
-            Ok((
-                Tokens::empty(),
-                Expr::FnCall("nomay".to_string(), vec!())
-            ))
+            Ok((Tokens::empty(), Expr::FnCall("nomay".to_string(), vec!())))
         );
     }
 
     #[test]
     fn t_expr_literal_str() {
-        let tokens = vec![
-            Token::String("nomay".to_string()),
-        ];
+        let tokens = vec![Token::String("nomay".to_string())];
         assert_eq!(
             parse_expr(Tokens::new(&tokens)),
             Ok((
@@ -281,18 +310,12 @@ mod test {
 
     #[test]
     fn t_expr_literal_integer() {
-        let tokens = vec![
-            Token::Integer(1123),
-        ];
+        let tokens = vec![Token::Integer(1123)];
         assert_eq!(
             parse_expr(Tokens::new(&tokens)),
-            Ok((
-                Tokens::empty(),
-                Expr::Literal(Literal::Integer(1123))
-            ))
+            Ok((Tokens::empty(), Expr::Literal(Literal::Integer(1123))))
         );
     }
-
 
     #[test]
     fn t_expr_infix_01() {
@@ -311,10 +334,14 @@ mod test {
             parse_expr(Tokens::new(&tokens)),
             Ok((
                 Tokens::empty(),
-                Expr::Infix(Infix::AddOp,
-                    Box::new(Expr::Infix(Infix::SubOp,
-                        Box::new(Expr::Infix(Infix::AddOp,
-                            Box::new(Expr::Infix(Infix::AddOp,
+                Expr::Infix(
+                    Infix::AddOp,
+                    Box::new(Expr::Infix(
+                        Infix::SubOp,
+                        Box::new(Expr::Infix(
+                            Infix::AddOp,
+                            Box::new(Expr::Infix(
+                                Infix::AddOp,
                                 Box::new(Expr::Literal(Literal::Integer(11))),
                                 Box::new(Expr::Literal(Literal::Integer(2)))
                             )),
@@ -345,11 +372,15 @@ mod test {
             parse_expr(Tokens::new(&tokens)),
             Ok((
                 Tokens::empty(),
-                Expr::Infix(Infix::AddOp,
-                    Box::new(Expr::Infix(Infix::SubOp,
-                        Box::new(Expr::Infix(Infix::AddOp,
+                Expr::Infix(
+                    Infix::AddOp,
+                    Box::new(Expr::Infix(
+                        Infix::SubOp,
+                        Box::new(Expr::Infix(
+                            Infix::AddOp,
                             Box::new(Expr::Literal(Literal::Integer(11))),
-                            Box::new(Expr::Infix(Infix::ModOp,
+                            Box::new(Expr::Infix(
+                                Infix::ModOp,
                                 Box::new(Expr::Literal(Literal::Integer(2))),
                                 Box::new(Expr::Literal(Literal::Integer(3)))
                             )),
@@ -375,8 +406,10 @@ mod test {
             parse_expr(Tokens::new(&tokens)),
             Ok((
                 Tokens::empty(),
-                Expr::Infix(Infix::SubOp,
-                    Box::new(Expr::Infix(Infix::SubOp,
+                Expr::Infix(
+                    Infix::SubOp,
+                    Box::new(Expr::Infix(
+                        Infix::SubOp,
                         Box::new(Expr::Literal(Literal::Integer(11))),
                         Box::new(Expr::Literal(Literal::Integer(2)))
                     )),
@@ -412,11 +445,7 @@ mod test {
             Token::LBlock,
             Token::RBlock,
         ];
-        let res = vec![Stmt::FnDef(
-            "nomay".to_string(),
-            vec![],
-            vec![],
-        )];
+        let res = vec![Stmt::FnDef("nomay".to_string(), vec![], vec![])];
 
         if let Ok((_, pres)) = parse_program(Tokens::new(&tokens)) {
             assert_eq!(pres, res);
@@ -439,7 +468,7 @@ mod test {
             None,
             Expr::Literal(Literal::Integer(1123)),
         )];
-        
+
         if let Ok((_, pres)) = parse_program(Tokens::new(&tokens)) {
             assert_eq!(pres, res);
         } else {
@@ -461,7 +490,7 @@ mod test {
             None,
             Expr::Literal(Literal::Integer(1123)),
         )];
-        
+
         if let Ok((_, pres)) = parse_program(Tokens::new(&tokens)) {
             assert_eq!(pres, res);
         } else {
