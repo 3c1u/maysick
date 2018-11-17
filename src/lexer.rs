@@ -143,8 +143,8 @@ named!(token_line<CompleteStr, Vec<Token>>,
 
 named!(pub token_maysick_line<CompleteStr, Vec<Token>>,
        do_parse!(
-            token_integer >>
-            r: token_line >>
+            map!(nom::digit, |_| ()) >>
+            r: token_line            >>
             (r)
           )
 );
