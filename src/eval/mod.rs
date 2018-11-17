@@ -120,6 +120,11 @@ pub fn eval_stmt(e: EnvRef, s: &Stmt) -> Result<MayObject, RuntimeError> {
             e.borrow_mut().set_var(i.clone(), &r)?;
             Ok(r)
         }
+        Stmt::Subst(i, x) => {
+            let r = eval_expr(e.clone(), x)?;
+            e.borrow_mut().substitute(i.clone(), &r)?;
+            Ok(r)
+        }
         Stmt::Return(orv) => match orv {
             Some(rv) => Ok(MayObject::RetVal(Box::new(eval_expr(e, rv)?))),
             None => Ok(MayObject::RetVal(Box::new(MayObject::Nil))),

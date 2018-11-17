@@ -195,7 +195,20 @@ named!(pub parse_stmt<Tokens, Stmt>,
         parse_stmt_let    |
         parse_stmt_var    |
         parse_stmt_expr   |
-        parse_stmt_blocked_expr
+        parse_stmt_blocked_expr |
+        parse_stmt_subst
+    )
+);
+
+named!(pub parse_stmt_subst<Tokens, Stmt>,
+    do_parse!(
+            idt: parse_ident                   >>
+            apply!(take_token, Token::EqualOp) >>
+            val: parse_expr                    >>
+            apply!(take_token, Token::EndLine) >>
+            (
+                Stmt::Subst(idt, val)
+            )
     )
 );
 

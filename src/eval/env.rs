@@ -61,6 +61,21 @@ impl Env {
     }
 
     pub fn set_var(&mut self, key: String, value: &MayObject) -> Result<(), RuntimeError> {
+        match self.items_let.get(&key) {
+            Some(_) => Err(RuntimeError::InvalidAccessError),
+            None => {
+                match self.items_var.get(&key) {
+                    Some(_) => Err(RuntimeError::InvalidAccessError),
+                    None => {
+                        self.items_var.insert(key, value.clone());
+                        Ok(())
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn substitute(&mut self, key: String, value: &MayObject) -> Result<(), RuntimeError> {
         let (vtype, er) = self.find_owner_mut(&key, None);
 
         if vtype == VariableType::Let {

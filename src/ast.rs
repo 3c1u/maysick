@@ -22,6 +22,9 @@ pub enum Stmt {
     FnDef(Ident, Args, Block),
     Let(Ident, Option<Type>, Expr),
     Var(Ident, Option<Type>, Expr),
+
+    Subst(Ident, Expr),
+
     Return(Option<Expr>),
     Expr(Expr),
 }
