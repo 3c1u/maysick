@@ -12,5 +12,9 @@ pub enum RuntimeError {
 
     ArgumentErr,
 
+    IOError,
+    
+    OutOfIndexError,
+
     UnknownErr,
 }

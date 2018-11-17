@@ -35,6 +35,22 @@ impl MayObject {
         MayObject::String(s)
     }
 
+    pub fn to_raw_string(&self) -> Result<String, RuntimeError> {
+      if let MayObject::String(r) = self.to_string()? {
+        Ok(r)
+      } else {
+        Err(RuntimeError::UnknownErr)
+      }
+    }
+
+    pub fn to_raw_integer(&self) -> Result<i64, RuntimeError> {
+      if let MayObject::Integer(r) = self.to_integer()? {
+        Ok(r)
+      } else {
+        Err(RuntimeError::UnknownErr)
+      }
+    }
+
     pub fn to_integer(&self) -> Result<Self, RuntimeError> {
         match self {
             MayObject::Integer(_) => Ok(self.clone()),
