@@ -4,58 +4,69 @@
  * 2018 - murueka
  */
 
-use std::collections::HashMap;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::io::{Error, ErrorKind};
+use std::cell::*;
+use std::collections::*;
+use std::rc::*;
 
-use eval::types::*;
 use eval::object::*;
+use eval::runtime_error::*;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct Env {
-    variable: HashMap<String, Rc<MayObject>>,
-    parent  : Option<Rc<RefCell<Env>>>,
-}
-
-impl Drop for Env {
-    fn drop(&mut self) {
-        if let Some(a) = self.parent.as_mut() {
-            a.detach(&self);
-            self.parent = None;
-        }
-
-        self.variable.clear();
-    }
+    parent: Option<Rc<RefCell<Env>>>,
+    items: HashMap<String, MayObject>,
 }
 
 impl Env {
-    fn detach(&mut self, child: &Env) {
-        // 現時点では何もすることはないよ...
-    }
-
-    fn set_global(&mut self, name: String, obj: Rc<T>) -> Result<(), Error>
-        where T: MayObject {
-        if let Some(p) = self.parent.as_mut() {
-            p.set_global(name, obj)
-        } else {
-            self.set(name, obj)
+    pub fn new() -> Self {
+        Env {
+            parent: None,
+            items: HashMap::new(),
         }
     }
 
-    fn set(&mut self, name: String, obj: Rc<T>) -> Result<(), Error>
-        where T: MayObject {
-        self.variable.insert(name, obj);
-        Ok(())
+    pub fn new_parent(p: Rc<RefCell<Env>>) -> Self {
+        Env {
+            parent: Some(p),
+            items: HashMap::new(),
+        }
     }
 
-    fn get(&mut self, name: String) -> Result<Rc<T>, Error>
-        where T: MayObject {
-       if let Some(val) = self.variable.get(name.as_str()) {
-           Ok(val)
-       } else if let Some(p) = self.parent.as_mut() {
-           p.get(name)
-       } else {
-           Err(Error::new(ErrorKind::NotFound, "Missing variable."))
-       }
+    pub fn set(&mut self, key: String, value: &MayObject) {
+        self.items.insert(key, value.clone());
+    }
+
+    pub fn get(&self, key: &String) -> MayObject {
+        match self.items.get(key) {
+            Some(v) => v.clone(),
+            None => {
+                if let Some(ref p) = self.parent {
+                    p.borrow().get(key)
+                } else {
+                    MayObject::Nil
+                }
+            }
+        }
+    }
+
+    pub fn call(&mut self, name: String, args: Vec<MayObject>) -> Result<MayObject, RuntimeError> {
+        match name.as_str() {
+            "println" => {
+                if args.len() == 1 {
+                    if let MayObject::String(s) = args[0].to_string()? {
+                        println!("{}", s);
+                        Ok(MayObject::Nil)
+                    } else {
+                        Err(RuntimeError::UnknownErr)
+                    }
+                } else {
+                    Err(RuntimeError::ArgumentErr)
+                }
+            }
+            _ => {
+                println!("'{}' called with args:\n{:#?}.", name, args);
+                Err(RuntimeError::UnimplementedErr)
+            }
+        }
     }
 }
