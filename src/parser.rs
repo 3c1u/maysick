@@ -279,10 +279,8 @@ named!(pub parse_program<Tokens, Program>, many0!(parse_stmt));
 
 #[cfg(test)]
 mod test {
-    use ast::*;
     use parser::*;
-    use token::*;
-
+    
     #[test]
     fn t_expr_fncall() {
         let tokens = vec![
