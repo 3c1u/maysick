@@ -8,23 +8,25 @@ use eval::object::*;
 use eval::runtime_error::*;
 
 use libc::*;
-use std::io;
+use std::io::{self, Write};
 
 pub fn call_builtin_function(name: &String, args: &Vec<MayObject>) -> Result<MayObject, RuntimeError> {
     match name.as_str() {
-        "println" => {
+        // IO系
+        "print" => {
             if args.len() == 1 {
                 let s = args[0].to_raw_string()?;
-                println!("{}", s);
+                print!("{}", s);
+                io::stdout().flush().unwrap(); // TODO
                 Ok(MayObject::Nil)
             } else {
                 Err(RuntimeError::ArgumentErr)
             }
         }
-        "print" => {
+        "println" => {
             if args.len() == 1 {
                 let s = args[0].to_raw_string()?;
-                print!("{}", s);
+                println!("{}", s);
                 Ok(MayObject::Nil)
             } else {
                 Err(RuntimeError::ArgumentErr)
@@ -36,6 +38,155 @@ pub fn call_builtin_function(name: &String, args: &Vec<MayObject>) -> Result<May
                 r = rand() as i64;
             }
             Ok(MayObject::Integer(r))
+        }
+        "getchar" => {
+            let mut r: i32;
+            unsafe {
+                r = getchar();
+            }
+            if r < 0 {
+                Ok(MayObject::Nil)
+            } else {
+                let mut s = String::new();
+                s.push((r as u8) as char);
+                Ok(MayObject::String(s))
+            }
+        }
+        "readline" => {
+            let mut s = String::new();
+            match io::stdin().read_line(&mut s) {
+                Ok(n) => Ok(MayObject::String(s[0..n - 1].to_string())),
+                Err(_) => Err(RuntimeError::IOError),
+            }
+        }
+        // 比較
+        "lt" => {
+            if args.len() == 2 {
+                let s = args[0].to_raw_integer()?;
+                let n = args[1].to_raw_integer()?;
+                Ok(MayObject::Bool(s < n))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "gt" => {
+            if args.len() == 2 {
+                let s = args[0].to_raw_integer()?;
+                let n = args[1].to_raw_integer()?;
+                Ok(MayObject::Bool(s > n))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "eqlt" => {
+            if args.len() == 2 {
+                let s = args[0].to_raw_integer()?;
+                let n = args[1].to_raw_integer()?;
+                Ok(MayObject::Bool(s <= n))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "eqgt" => {
+            if args.len() == 2 {
+                let s = args[0].to_raw_integer()?;
+                let n = args[1].to_raw_integer()?;
+                Ok(MayObject::Bool(s >= n))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "eq" => {
+            if args.len() == 2 {
+                let s = &args[0];
+                let n = &args[1];
+                Ok(MayObject::Bool(s == n))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "neq" => {
+            if args.len() == 2 {
+                let s = &args[0];
+                let n = &args[1];
+                Ok(MayObject::Bool(s != n))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        // 演算子
+        "mul" => {
+            if args.len() == 2 {
+                let s = args[0].to_raw_integer()?;
+                let n = args[1].to_raw_integer()?;
+                Ok(MayObject::Integer(s * n))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "div" => {
+            if args.len() == 2 {
+                let s = args[0].to_raw_integer()?;
+                let n = args[1].to_raw_integer()?;
+                Ok(MayObject::Integer(s / n))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "and" => {
+            if args.len() == 2 {
+                if let MayObject::Bool(sb) = args[0] {
+                    let nb = args[1].to_raw_bool()?;
+                    Ok(MayObject::Bool(sb && nb))
+                } else {
+                    let s = args[0].to_raw_integer()?;
+                    let n = args[1].to_raw_integer()?;
+                    Ok(MayObject::Integer(s & n))
+                }
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "or" => {
+            if args.len() == 2 {
+                if let MayObject::Bool(sb) = args[0] {
+                    let nb = args[1].to_raw_bool()?;
+                    Ok(MayObject::Bool(sb || nb))
+                } else {
+                    let s = args[0].to_raw_integer()?;
+                    let n = args[1].to_raw_integer()?;
+                    Ok(MayObject::Integer(s & n))
+                }
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "not" => {
+            if args.len() == 1 {
+                Ok(MayObject::Bool(!args[0].to_raw_bool()?))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        // キャストなど
+        "to_string" => {
+            if args.len() == 1 {
+                let s = &args[0];
+                s.to_string()
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "to_integer" => {
+            if args.len() == 1 {
+                let s = &args[0];
+                s.to_integer()
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
+        }
+        "nil" => {
+            Ok(MayObject::Nil)
         }
         "char_at" => {
             if args.len() == 2 {
@@ -58,26 +209,6 @@ pub fn call_builtin_function(name: &String, args: &Vec<MayObject>) -> Result<May
                 Ok(MayObject::String(s))
             } else {
                 Err(RuntimeError::ArgumentErr)
-            }
-        }
-        "getchar" => {
-            let mut r: i32;
-            unsafe {
-                r = getchar();
-            }
-            if r < 0 {
-                Ok(MayObject::Nil)
-            } else {
-                let mut s = String::new();
-                s.push((r as u8) as char);
-                Ok(MayObject::String(s))
-            }
-        }
-        "readline" => {
-            let mut s = String::new();
-            match io::stdin().read_line(&mut s) {
-                Ok(n) => Ok(MayObject::String(s[0..n - 1].to_string())),
-                Err(_) => Err(RuntimeError::IOError),
             }
         }
         _ => {
