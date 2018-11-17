@@ -18,7 +18,7 @@ pub mod parser;
 pub mod token;
 
 mod cl {
-    extern {
+    extern "C" {
         pub fn clock() -> ::libc::clock_t;
     }
 }
