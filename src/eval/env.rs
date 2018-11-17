@@ -1,5 +1,5 @@
 /*
- * Maysick -- The Programming Language
+ * maysick
  *
  * 2018 - murueka
  */
@@ -11,120 +11,121 @@ use std::rc::*;
 use eval::object::*;
 use eval::runtime_error::*;
 
-use libc::*;
-use std::io;
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Env {
-    parent: Option<Rc<RefCell<Env>>>,
-    items: HashMap<String, MayObject>,
+    parent:    Option<Rc<RefCell<Env>>>,
+    items_var: HashMap<String, MayObject>,
+    items_let: HashMap<String, MayObject>,
+}
+
+pub type EnvRef = Rc<RefCell<Env>>;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum VariableType {
+    Let,
+    Var,
+    Nil,
 }
 
 impl Env {
+    pub fn new_ref() -> EnvRef {
+        Rc::new(
+            RefCell::new(Env::new())
+        )
+    }
+
+    pub fn new_parent_ref(p: EnvRef) -> EnvRef {
+        Rc::new(
+            RefCell::new(Env::new_parent(p))
+        )
+    }
+
     pub fn new() -> Self {
         Env {
             parent: None,
-            items: HashMap::new(),
+            items_var: HashMap::new(),
+            items_let: HashMap::new(),
         }
     }
 
-    pub fn new_parent(p: Rc<RefCell<Env>>) -> Self {
+    pub fn new_parent(p: EnvRef) -> Self {
         Env {
             parent: Some(p),
-            items: HashMap::new(),
+            items_var: HashMap::new(),
+            items_let: HashMap::new(),
         }
     }
 
-    pub fn set(&mut self, key: String, value: &MayObject) {
-        self.items.insert(key, value.clone());
+    fn insert_var(&mut self, key: String, value: &MayObject) {
+        self.items_var.insert(key, value.clone());
+    }
+
+    pub fn set_var(&mut self, key: String, value: &MayObject) -> Result<(), RuntimeError> {
+        let (vtype, er) = self.find_owner_mut(&key, None);
+
+        if vtype == VariableType::Let {
+            return Err(RuntimeError::InvalidAccessError);
+        }
+
+        match er {
+            Some(e) => {
+                e.borrow_mut().insert_var(key, value);
+                Ok(())
+            },
+            None => {
+                self.items_var.insert(key, value.clone());
+                Ok(())
+            }
+        }
+    }
+
+    pub fn set_let(&mut self, key: String, value: &MayObject) -> Result<(), RuntimeError> {
+        match self.items_let.get(&key) {
+            Some(_) => Err(RuntimeError::InvalidAccessError),
+            None   => { 
+                self.items_let.insert(key, value.clone());
+                Ok(())
+            }
+        }
     }
 
     pub fn get(&self, key: &String) -> MayObject {
-        match self.items.get(key) {
-            Some(v) => v.clone(),
+        self.get_opt(key)
+            .unwrap_or(MayObject::Nil)
+    }
+
+    pub fn get_opt(&self, key: &String) -> Option<MayObject> {
+        match self.items_let.get(key) {
+            Some(v) => Some(v.clone()),
             None => {
-                if let Some(ref p) = self.parent {
-                    p.borrow().get(key)
-                } else {
-                    MayObject::Nil
+                match self.items_var.get(key) {
+                    Some(v) => Some(v.clone()),
+                    None => {
+                        if let Some(ref p) = self.parent {
+                            Some(p.borrow().get(key))
+                        } else {
+                        None
+                        }
+                    }
                 }
             }
         }
     }
 
-    pub fn call(&mut self, name: String, args: Vec<MayObject>) -> Result<MayObject, RuntimeError> {
-        match name.as_str() {
-            "println" => {
-                if args.len() == 1 {
-                    let s = args[0].to_raw_string()?;
-                    println!("{}", s);
-                    Ok(MayObject::Nil)
-                } else {
-                    Err(RuntimeError::ArgumentErr)
+    fn find_owner_mut(&self, key: &String, me: Option<EnvRef>) -> (VariableType, Option<EnvRef>) {
+        match self.items_let.get(key) {
+            Some(_) => (VariableType::Let, me.clone()),
+            None => {
+                match self.items_var.get(key) {
+                    Some(_) => (VariableType::Var, me.clone()),
+                    None => {
+                        if let Some(ref p) = self.parent {
+                            p.borrow().find_owner_mut(key, self.parent.clone())
+                        } else {
+                            (VariableType::Nil, None)
+                        }
+                    }
                 }
-            }
-            "print" => {
-                if args.len() == 1 {
-                    let s = args[0].to_raw_string()?;
-                    print!("{}", s);
-                    Ok(MayObject::Nil)
-                } else {
-                    Err(RuntimeError::ArgumentErr)
-                }
-            }
-            "random" => {
-                let mut r: i64;
-                unsafe {
-                    r = rand() as i64;
-                }
-                Ok(MayObject::Integer(r))
-            }
-            "char_at" => {
-                if args.len() == 2 {
-                    let s = args[0].to_raw_string()?;
-                    let n = args[1].to_raw_integer()?;
-                    let c = s
-                        .chars()
-                        .nth(n as usize)
-                        .ok_or(RuntimeError::OutOfIndexError)?;
-                    Ok(MayObject::Integer(c as i64))
-                } else {
-                    Err(RuntimeError::ArgumentErr)
-                }
-            }
-            "char_from" => {
-                if args.len() == 1 {
-                    let n = args[0].to_raw_integer()? as u8;
-                    let mut s = String::new();
-                    s.push(n as char);
-                    Ok(MayObject::String(s))
-                } else {
-                    Err(RuntimeError::ArgumentErr)
-                }
-            }
-            "getchar" => {
-                let mut r: i32;
-                unsafe {
-                    r = getchar();
-                }
-                if r < 0 {
-                    Ok(MayObject::Nil)
-                } else {
-                    let mut s = String::new();
-                    s.push((r as u8) as char);
-                    Ok(MayObject::String(s))
-                }
-            }
-            "readline" => {
-                let mut s = String::new();
-                match io::stdin().read_line(&mut s) {
-                    Ok(n) => Ok(MayObject::String(s[0..n - 1].to_string())),
-                    Err(_) => Err(RuntimeError::IOError),
-                }
-            }
-            _ => {
-                println!("'{}' called with args:\n{:#?}.", name, args);
-                Err(RuntimeError::UnimplementedErr)
             }
         }
     }

@@ -88,11 +88,12 @@ pub fn run(path: &str) {
     let exists = pbuf.exists();
     if is_dir && exists {
         let tokens = get_token_from_directory(&pbuf).unwrap();
-        let prog = parse_program(Tokens::new(&tokens));
-        let mut e = Env::new();
+        let prog   = parse_program(Tokens::new(&tokens));
+        let e      = Env::new_ref();
+        
         match prog {
             Ok((_, p)) => {
-                eval::eval(&mut e, p).unwrap();
+                eval::eval(e, p).unwrap();
             }
             Err(e) => println!("Error: {:#?}", e),
         }

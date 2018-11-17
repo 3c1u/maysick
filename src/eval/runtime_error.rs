@@ -15,6 +15,7 @@ pub enum RuntimeError {
     IOError,
 
     OutOfIndexError,
+    InvalidAccessError,
 
     UnknownErr,
 }

@@ -12,6 +12,8 @@ pub enum MayObject {
     Integer(i64),
     String(String),
 
+    Bool(bool),
+
     Fn(Args, Block),
     NativeFn(NativeFunction),
 
@@ -23,6 +25,10 @@ pub enum MayObject {
 pub type NativeFunction = fn(Vec<MayObject>) -> Vec<MayObject>;
 
 impl MayObject {
+    pub fn from_bool(i: bool) -> Self {
+        MayObject::Bool(i)
+    }
+
     pub fn from_integer(i: i64) -> Self {
         MayObject::Integer(i)
     }
@@ -34,7 +40,7 @@ impl MayObject {
     pub fn from_string(s: String) -> Self {
         MayObject::String(s)
     }
-
+    
     pub fn to_raw_string(&self) -> Result<String, RuntimeError> {
         if let MayObject::String(r) = self.to_string()? {
             Ok(r)
@@ -51,6 +57,14 @@ impl MayObject {
         }
     }
 
+    pub fn to_raw_bool(&self) -> Result<bool, RuntimeError> {
+        if let MayObject::Bool(r) = self.to_bool()? {
+            Ok(r)
+        } else {
+            Err(RuntimeError::UnknownErr)
+        }
+    }
+
     pub fn to_integer(&self) -> Result<Self, RuntimeError> {
         match self {
             MayObject::Integer(_) => Ok(self.clone()),
@@ -59,6 +73,7 @@ impl MayObject {
                 .ok()
                 .map(|s: i64| MayObject::Integer(s))
                 .ok_or(RuntimeError::CastError),
+            MayObject::Bool(b) => Ok(MayObject::Integer(*b as i64)),
             MayObject::Nil => Ok(MayObject::Integer(0)),
             _ => Err(RuntimeError::CastError),
         }
@@ -72,7 +87,23 @@ impl MayObject {
             MayObject::NativeFn(_) => Ok(MayObject::String(
                 "fn() {\n  [native function]\n}".to_string(),
             )),
+            MayObject::Bool(b) => match b {
+                true  => Ok(MayObject::String("true".to_string())),
+                false => Ok(MayObject::String("false".to_string())),
+            },
             MayObject::Nil => Ok(MayObject::String("(Nil)".to_string())),
+            _ => Err(RuntimeError::CastError),
+        }
+    }
+
+    pub fn to_bool(&self) -> Result<Self, RuntimeError> {
+        match self {
+            MayObject::Integer(a)  => Ok(MayObject::Bool(*a != 0)),
+            MayObject::String(_)   => Ok(MayObject::Bool(true)),
+            MayObject::Fn(_, _)    => Ok(MayObject::Bool(true)),
+            MayObject::NativeFn(_) => Ok(MayObject::Bool(true)),
+            MayObject::Bool(_)     => Ok(self.clone()),
+            MayObject::Nil         => Ok(MayObject::Bool(false)),
             _ => Err(RuntimeError::CastError),
         }
     }
