@@ -40,7 +40,7 @@ impl MayObject {
     pub fn from_string(s: String) -> Self {
         MayObject::String(s)
     }
-    
+
     pub fn to_raw_string(&self) -> Result<String, RuntimeError> {
         if let MayObject::String(r) = self.to_string()? {
             Ok(r)
@@ -88,7 +88,7 @@ impl MayObject {
                 "fn() {\n  [native function]\n}".to_string(),
             )),
             MayObject::Bool(b) => match b {
-                true  => Ok(MayObject::String("true".to_string())),
+                true => Ok(MayObject::String("true".to_string())),
                 false => Ok(MayObject::String("false".to_string())),
             },
             MayObject::Nil => Ok(MayObject::String("(Nil)".to_string())),
@@ -98,12 +98,12 @@ impl MayObject {
 
     pub fn to_bool(&self) -> Result<Self, RuntimeError> {
         match self {
-            MayObject::Integer(a)  => Ok(MayObject::Bool(*a != 0)),
-            MayObject::String(_)   => Ok(MayObject::Bool(true)),
-            MayObject::Fn(_, _)    => Ok(MayObject::Bool(true)),
+            MayObject::Integer(a) => Ok(MayObject::Bool(*a != 0)),
+            MayObject::String(_) => Ok(MayObject::Bool(true)),
+            MayObject::Fn(_, _) => Ok(MayObject::Bool(true)),
             MayObject::NativeFn(_) => Ok(MayObject::Bool(true)),
-            MayObject::Bool(_)     => Ok(self.clone()),
-            MayObject::Nil         => Ok(MayObject::Bool(false)),
+            MayObject::Bool(_) => Ok(self.clone()),
+            MayObject::Nil => Ok(MayObject::Bool(false)),
             _ => Err(RuntimeError::CastError),
         }
     }

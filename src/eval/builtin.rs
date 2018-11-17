@@ -10,7 +10,10 @@ use eval::runtime_error::*;
 use libc::*;
 use std::io::{self, Write};
 
-pub fn call_builtin_function(name: &String, args: &Vec<MayObject>) -> Result<MayObject, RuntimeError> {
+pub fn call_builtin_function(
+    name: &String,
+    args: &Vec<MayObject>,
+) -> Result<MayObject, RuntimeError> {
     match name.as_str() {
         // IO系
         "print" => {
@@ -185,9 +188,7 @@ pub fn call_builtin_function(name: &String, args: &Vec<MayObject>) -> Result<May
                 Err(RuntimeError::ArgumentErr)
             }
         }
-        "nil" => {
-            Ok(MayObject::Nil)
-        }
+        "nil" => Ok(MayObject::Nil),
         "char_at" => {
             if args.len() == 2 {
                 let s = args[0].to_raw_string()?;
@@ -211,8 +212,14 @@ pub fn call_builtin_function(name: &String, args: &Vec<MayObject>) -> Result<May
                 Err(RuntimeError::ArgumentErr)
             }
         }
-        _ => {
-            Err(RuntimeError::UnimplementedErr)
+        "slen" => {
+            if args.len() == 1 {
+                let n = args[0].to_raw_string()?;
+                Ok(MayObject::Integer(n.len() as i64))
+            } else {
+                Err(RuntimeError::ArgumentErr)
+            }
         }
+        _ => Err(RuntimeError::UnimplementedErr),
     }
 }

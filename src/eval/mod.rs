@@ -30,8 +30,8 @@ pub fn eval_block(e: EnvRef, p: Program) -> Result<MayObject, RuntimeError> {
     let scope = Env::new_parent_ref(e);
     for s in p {
         let r = eval_stmt(scope.clone(), &s)?;
-        if let MayObject::RetVal(v) = r {
-            return Ok(v.as_ref().clone());
+        if let MayObject::RetVal(_) = r {
+            return Ok(r.clone());
         }
     }
     // fallback
@@ -41,8 +41,8 @@ pub fn eval_block(e: EnvRef, p: Program) -> Result<MayObject, RuntimeError> {
 pub fn eval_literal(l: &Literal) -> Result<MayObject, RuntimeError> {
     match l {
         Literal::Integer(n) => Ok(MayObject::Integer(*n)),
-        Literal::String(s)  => Ok(MayObject::String(s.clone())),
-        Literal::Bool(b)    => Ok(MayObject::Bool(*b)),
+        Literal::String(s) => Ok(MayObject::String(s.clone())),
+        Literal::Bool(b) => Ok(MayObject::Bool(*b)),
     }
 }
 
@@ -60,9 +60,13 @@ pub fn eval_expr(_e: EnvRef, x: &Expr) -> Result<MayObject, RuntimeError> {
         Expr::Ident(n) => {
             let e = &mut _e.borrow_mut();
             Ok(e.get(&n))
-        },
+        }
         Expr::Literal(l) => eval_literal(l),
-        Expr::Infix(i, a, b) => eval_infix(i, eval_expr(_e.clone(), a.as_ref())?, eval_expr(_e.clone(), b.as_ref())?),
+        Expr::Infix(i, a, b) => eval_infix(
+            i,
+            eval_expr(_e.clone(), a.as_ref())?,
+            eval_expr(_e.clone(), b.as_ref())?,
+        ),
         Expr::FnCall(n, arg) => {
             let a = arg
                 .into_iter()
@@ -70,14 +74,15 @@ pub fn eval_expr(_e: EnvRef, x: &Expr) -> Result<MayObject, RuntimeError> {
                 .collect();
             let e = &mut _e.borrow_mut();
             match builtin::call_builtin_function(&n, &a) {
-                    Ok(r)  => Ok(r),
-                    Err(_) => {
+                Ok(r) => Ok(r),
+                Err(_) => {
                     // println!("'{}' called with args:\n{:#?}.", name, args);
                     if let MayObject::Fn(argname, block) = e.get(&n) {
                         let scope = Env::new_parent_ref(_e.clone());
                         for i in 0..argname.len() {
-                            scope.borrow_mut()
-                                 .set_var(argname[i].clone(), &a[i].clone())?;
+                            scope
+                                .borrow_mut()
+                                .set_var(argname[i].clone(), &a[i].clone())?;
                         }
                         eval(scope, block)
                     } else {
@@ -85,20 +90,20 @@ pub fn eval_expr(_e: EnvRef, x: &Expr) -> Result<MayObject, RuntimeError> {
                     }
                 }
             }
-        },
+        }
         Expr::If(c, b) => {
             if eval_expr(_e.clone(), c.as_ref())?.to_raw_bool()? {
                 eval_block(_e, b.clone())
             } else {
                 Ok(MayObject::Nil)
             }
-        },
+        }
         Expr::While(c, b) => {
             while eval_expr(_e.clone(), c.as_ref())?.to_raw_bool()? {
                 eval_block(_e.clone(), b.clone())?;
             }
             Ok(MayObject::Nil)
-        },
+        }
         _ => Err(RuntimeError::UnimplementedErr),
     }
 }
