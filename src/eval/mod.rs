@@ -1,5 +1,5 @@
 /*
- * Maysick -- The Programming Language
+ * maysick
  *
  * 2018 - murueka
  */

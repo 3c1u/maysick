@@ -1,5 +1,5 @@
 /*
- * Maysick -- The Programming Language
+ * maysick
  *
  * 2018 - murueka
  */
@@ -19,6 +19,7 @@ pub mod lexer;
 pub mod loader;
 pub mod parser;
 pub mod token;
+pub mod codegen;
 
 mod cl {
     extern "C" {
