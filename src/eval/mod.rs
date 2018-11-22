@@ -51,6 +51,8 @@ pub fn eval_infix(i: &Infix, a: MayObject, b: MayObject) -> Result<MayObject, Ru
         Infix::AddOp => MayObject::operator_add(&a, &b),
         Infix::SubOp => MayObject::operator_sub(&a, &b),
         Infix::ModOp => MayObject::operator_mod(&a, &b),
+        Infix::MulOp => MayObject::operator_mul(&a, &b),
+        Infix::DivOp => MayObject::operator_div(&a, &b),
         _ => Err(RuntimeError::UnimplementedErr),
     }
 }

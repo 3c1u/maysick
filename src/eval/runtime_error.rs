@@ -18,4 +18,6 @@ pub enum RuntimeError {
     InvalidAccessError,
 
     UnknownErr,
+
+    ParseError,
 }

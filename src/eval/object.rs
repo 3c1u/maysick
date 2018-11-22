@@ -150,4 +150,26 @@ impl MayObject {
             Err(RuntimeError::IncompatibleTypeError)
         }
     }
+
+    pub fn operator_mul(a: &MayObject, b: &MayObject) -> Result<MayObject, RuntimeError> {
+        if let MayObject::Integer(va) = a {
+            match b {
+                MayObject::Integer(vb) => Ok(MayObject::Integer(va * vb)),
+                _ => Err(RuntimeError::IncompatibleTypeError),
+            }
+        } else {
+            Err(RuntimeError::IncompatibleTypeError)
+        }
+    }
+
+    pub fn operator_div(a: &MayObject, b: &MayObject) -> Result<MayObject, RuntimeError> {
+        if let MayObject::Integer(va) = a {
+            match b {
+                MayObject::Integer(vb) => Ok(MayObject::Integer(va / vb)),
+                _ => Err(RuntimeError::IncompatibleTypeError),
+            }
+        } else {
+            Err(RuntimeError::IncompatibleTypeError)
+        }
+    }
 }

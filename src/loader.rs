@@ -6,21 +6,15 @@
 
 use nom::types::CompleteStr;
 use std::io::{Error, ErrorKind};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use ast::*;
 use lexer::*;
 use parser::*;
 use token::*;
 
 use eval;
 use eval::env::*;
-
-pub fn get_current_path() -> Result<Box<Path>, Error> {
-    let current_path = Path::new(".");
-    let full_pathbuf = current_path.canonicalize();
-
-    return Ok(Box::from(full_pathbuf?.as_path()));
-}
 
 fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
     let mut tokens: Vec<Token> = Vec::new();
@@ -78,7 +72,7 @@ fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
     Ok(tokens)
 }
 
-pub fn run(path: &str) {
+fn obtain_program(path: &str) -> Result<Program, Error> {
     // 現在位置から"run"ディレクトリを探してみる
     let mut pbuf = PathBuf::from(path);
     pbuf.push("run");
@@ -88,20 +82,33 @@ pub fn run(path: &str) {
     let exists = pbuf.exists();
     if is_dir && exists {
         let tokens = get_token_from_directory(&pbuf).unwrap();
-        let prog = parse_program(Tokens::new(&tokens));
-        let e = Env::new_ref();
-
-        match prog {
-            Ok((_, p)) => {
-                eval::eval(e, p).unwrap();
-            }
-            Err(e) => println!("Error: {:#?}", e),
-        }
+        parse_program(Tokens::new(&tokens))
+            .map(|(_, r)| r)
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
     } else if !exists {
         // 存在しないとき
-        println!("\"run\" directory not found.");
+        Err(Error::new(
+            ErrorKind::NotFound,
+            "\"run\" directory not found.",
+        ))
     } else {
         // ディレクトリのとき
-        println!("\"run\" is not a directory.");
+        Err(Error::new(
+            ErrorKind::NotFound,
+            "\"run\" is not a directory.",
+        ))
+    }
+}
+
+pub fn run_interpreter(path: &str) {
+    let p_ = obtain_program(path);
+    match p_ {
+        Ok(p) => {
+            let e = Env::new_ref();
+            eval::eval(e, p).unwrap();
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+        }
     }
 }

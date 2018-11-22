@@ -41,6 +41,10 @@ pub enum Infix {
     AddOp,
     SubOp,
     ModOp,
+    DivOp,
+    MulOp,
+    AndOp,
+    OrOp,
     BinFnOp,
 }
 

@@ -14,12 +14,12 @@ use clap::{App, Arg, SubCommand};
 use std::io::{Error, ErrorKind};
 
 pub mod ast;
+pub mod codegen;
 pub mod eval;
 pub mod lexer;
 pub mod loader;
 pub mod parser;
 pub mod token;
-pub mod codegen;
 
 mod cl {
     extern "C" {
@@ -73,7 +73,7 @@ fn parse_args() -> Result<(), std::io::Error> {
             ErrorKind::InvalidInput,
             "Input file is not specified.",
         ))?;
-        loader::run(cpath);
+        loader::run_interpreter(cpath);
     } else if let Some(matches) = matches.subcommand_matches("compile") {
         let _cpath = matches.value_of("INPUT").ok_or(Error::new(
             ErrorKind::InvalidInput,

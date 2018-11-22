@@ -121,7 +121,11 @@ named_args!(parse_infix_op_t_w(n: i64, left: Expr)<Tokens, Expr>,
         apply!(parse_infix_op_t,
                Token::SubOp, Infix::SubOp, 2, n, left.clone()) |
         apply!(parse_infix_op_t,
-               Token::ModOp, Infix::ModOp, 1, n, left.clone())
+               Token::ModOp, Infix::ModOp, 1, n, left.clone()) |
+        apply!(parse_infix_op_t,
+               Token::MulOp, Infix::MulOp, 1, n, left.clone()) |
+        apply!(parse_infix_op_t,
+               Token::DivOp, Infix::DivOp, 1, n, left.clone())
     )
 );
 
@@ -132,7 +136,11 @@ named_args!(parse_expr_infix(n: i64)<Tokens, Expr>,
         apply!(parse_infix_op,
                Token::SubOp, Infix::SubOp, 2, n) |
         apply!(parse_infix_op,
-               Token::ModOp, Infix::ModOp, 1, n)
+               Token::ModOp, Infix::ModOp, 1, n) |
+        apply!(parse_infix_op,
+               Token::MulOp, Infix::MulOp, 1, n) |
+        apply!(parse_infix_op,
+               Token::DivOp, Infix::DivOp, 1, n)
     )
 );
 
