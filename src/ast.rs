@@ -1,5 +1,5 @@
 /*
- * Maysick -- The Programming Language
+ * maysick
  *
  * 2018 - murueka
  */
@@ -41,6 +41,10 @@ pub enum Infix {
     AddOp,
     SubOp,
     ModOp,
+    DivOp,
+    MulOp,
+    AndOp,
+    OrOp,
     BinFnOp,
 }
 

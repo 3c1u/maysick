@@ -1,5 +1,5 @@
 /*
- * Maysick -- The Programming Language
+ * maysick
  *
  * 2018 - murueka
  */
@@ -18,4 +18,6 @@ pub enum RuntimeError {
     InvalidAccessError,
 
     UnknownErr,
+
+    ParseError,
 }
