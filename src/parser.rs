@@ -4,8 +4,8 @@
  * 2018 - murueka
  */
 
-use ast::*;
-use token::*;
+use crate::ast::*;
+use crate::token::*;
 
 // トークンを取り出すためのパーサー
 named!(take_any<Tokens, Token>,
@@ -300,7 +300,7 @@ named!(pub parse_program<Tokens, Program>, many0!(parse_stmt));
 
 #[cfg(test)]
 mod test {
-    use parser::*;
+    use crate::parser::*;
 
     #[test]
     fn t_expr_fncall() {

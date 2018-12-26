@@ -3,6 +3,7 @@ authors = ["murueka <298748+3c1u@users.noreply.github.com>"]
 name = "maysick"
 version = "0.1.0"
 description = "A programming language of directories."
+edition = "2018"
 [dependencies]
 clap = "*"
 libc = "*"

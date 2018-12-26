@@ -8,13 +8,13 @@ use nom::types::CompleteStr;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
-use ast::*;
-use lexer::*;
-use parser::*;
-use token::*;
+use crate::ast::*;
+use crate::lexer::*;
+use crate::parser::*;
+use crate::token::*;
 
-use eval;
-use eval::env::*;
+use crate::eval;
+use crate::eval::env::*;
 
 fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
     let mut tokens: Vec<Token> = Vec::new();

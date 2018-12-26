@@ -5,7 +5,7 @@
  */
 
 use nom::types::CompleteStr;
-use token::*;
+use crate::token::*;
 
 // Eof parser
 named!(token_eof<CompleteStr, Token>,
@@ -159,7 +159,7 @@ named!(pub token_maysick_line<CompleteStr, Vec<Token>>,
 
 #[cfg(test)]
 mod test {
-    use lexer::*;
+    use crate::lexer::*;
 
     #[test]
     fn t_eof() {

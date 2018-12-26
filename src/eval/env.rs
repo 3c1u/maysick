@@ -8,8 +8,8 @@ use std::cell::*;
 use std::collections::*;
 use std::rc::*;
 
-use eval::object::*;
-use eval::runtime_error::*;
+use crate::eval::object::*;
+use crate::eval::runtime_error::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Env {

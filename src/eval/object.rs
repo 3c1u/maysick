@@ -4,8 +4,8 @@
  * 2018 - murueka
  */
 
-use ast::*;
-use eval::runtime_error::*;
+use crate::ast::*;
+use crate::eval::runtime_error::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum MayObject {

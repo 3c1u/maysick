@@ -4,8 +4,8 @@
  * 2018 - murueka
  */
 
-use eval::object::*;
-use eval::runtime_error::*;
+use crate::eval::object::*;
+use crate::eval::runtime_error::*;
 
 use libc::*;
 use std::io::{self, Write};
@@ -36,17 +36,15 @@ pub fn call_builtin_function(
             }
         }
         "random" => {
-            let mut r: i64;
-            unsafe {
-                r = rand() as i64;
-            }
+            let r: i64 = unsafe {
+                rand() as i64
+            };
             Ok(MayObject::Integer(r))
         }
         "getchar" => {
-            let mut r: i32;
-            unsafe {
-                r = getchar();
-            }
+            let r: i32 = unsafe {
+                getchar()
+            };
             if r < 0 {
                 Ok(MayObject::Nil)
             } else {

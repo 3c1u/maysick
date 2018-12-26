@@ -9,11 +9,11 @@ pub mod env;
 pub mod object;
 pub mod runtime_error;
 
-use ast::*;
+use crate::ast::*;
 
-use eval::env::*;
-use eval::object::*;
-use eval::runtime_error::*;
+use crate::eval::env::*;
+use crate::eval::object::*;
+use crate::eval::runtime_error::*;
 
 pub fn eval(e: EnvRef, p: Program) -> Result<MayObject, RuntimeError> {
     for s in p {
