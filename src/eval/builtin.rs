@@ -36,15 +36,11 @@ pub fn call_builtin_function(
             }
         }
         "random" => {
-            let r: i64 = unsafe {
-                rand() as i64
-            };
+            let r: i64 = unsafe { rand() as i64 };
             Ok(MayObject::Integer(r))
         }
         "getchar" => {
-            let r: i32 = unsafe {
-                getchar()
-            };
+            let r: i32 = unsafe { getchar() };
             if r < 0 {
                 Ok(MayObject::Nil)
             } else {

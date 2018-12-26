@@ -43,7 +43,8 @@ fn parse_args() -> Result<(), std::io::Error> {
                         .required(true)
                         .index(1),
                 ),
-        ).subcommand(
+        )
+        .subcommand(
             SubCommand::with_name("compile")
                 .version(env!("CARGO_PKG_VERSION"))
                 .author(env!("CARGO_PKG_AUTHORS"))
@@ -53,20 +54,23 @@ fn parse_args() -> Result<(), std::io::Error> {
                         .help("Specify a directory which includes \"run/\"")
                         .required(true)
                         .index(1),
-                ).arg(
+                )
+                .arg(
                     Arg::with_name("bin_output")
                         .short("o")
                         .long("output")
                         .value_name("FILE")
                         .help("Writes output to the file")
                         .takes_value(true),
-                ).arg(
+                )
+                .arg(
                     Arg::with_name("emitllvm")
                         .short("e")
                         .long("emit-llvm")
                         .help("Emits an LLVM code"),
                 ),
-        ).get_matches();
+        )
+        .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("run") {
         let cpath = matches.value_of("INPUT").ok_or(Error::new(

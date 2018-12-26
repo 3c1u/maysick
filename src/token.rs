@@ -37,11 +37,11 @@ pub enum Token {
     // %
     ModOp, // <not-tested>
     // `mul`, `div`, etc...
-    MulOp, // <not-tested>
-    DivOp, // <not-tested>
-    AndOp, // <not-tested>
-    OrOp,  // <not-tested>
-    NotOp, // <not-tested>
+    MulOp,              // <not-tested>
+    DivOp,              // <not-tested>
+    AndOp,              // <not-tested>
+    OrOp,               // <not-tested>
+    NotOp,              // <not-tested>
     BinaryFnOp(String), // <tested>
 
     // ->

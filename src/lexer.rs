@@ -4,8 +4,8 @@
  * 2018 - murueka
  */
 
-use nom::types::CompleteStr;
 use crate::token::*;
+use nom::types::CompleteStr;
 
 // Eof parser
 named!(token_eof<CompleteStr, Token>,
