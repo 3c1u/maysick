@@ -129,7 +129,7 @@ named!(token_integer<CompleteStr, Token>,
                    }
                })
            ),
-           |res| Token::Integer(res)
+           Token::Integer
        )
 );
 

@@ -85,7 +85,7 @@ named_args!(parse_expr_left(n: i64)<Tokens, Expr>,
 
 named_args!(parse_infix_op(op: Token, itype: Infix, priority: i64, n: i64)<Tokens, Expr>,
             do_parse!(
-              verify!(take!(0), |_| { priority <= n })    >>
+              verify!(take!(0), |_| priority <= n )    >>
               left: apply!(parse_expr_left, priority - 1) >>
               res : apply!(parse_infix_op_t,
                            op,
@@ -100,7 +100,7 @@ named_args!(parse_infix_op(op: Token, itype: Infix, priority: i64, n: i64)<Token
 named_args!(parse_infix_op_t(op: Token, itype: Infix, priority: i64, n: i64, left: Expr)<Tokens, Expr>,
             alt!(
                 do_parse!(
-                    verify!(take!(0), |_| { priority == n } ) >>
+                    verify!(take!(0), |_| priority == n ) >>
                     apply!(take_token, op.clone()) >>
                     comb: map!(apply!(parse_expr_left, priority - 1),
                                |right| { Expr::Infix(itype, Box::new(left.clone()), Box::new(right)) })

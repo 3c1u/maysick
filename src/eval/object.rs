@@ -33,10 +33,6 @@ impl MayObject {
         MayObject::Integer(i)
     }
 
-    pub fn from_str(s: &str) -> Self {
-        MayObject::String(s.to_string())
-    }
-
     pub fn from_string(s: String) -> Self {
         MayObject::String(s)
     }
@@ -71,7 +67,7 @@ impl MayObject {
             MayObject::String(s) => s
                 .parse::<i64>()
                 .ok()
-                .map(|s: i64| MayObject::Integer(s))
+                .map(MayObject::Integer)
                 .ok_or(RuntimeError::CastError),
             MayObject::Bool(b) => Ok(MayObject::Integer(*b as i64)),
             MayObject::Nil => Ok(MayObject::Integer(0)),
@@ -171,5 +167,13 @@ impl MayObject {
         } else {
             Err(RuntimeError::IncompatibleTypeError)
         }
+    }
+}
+
+impl std::str::FromStr for MayObject {
+    type Err = RuntimeError;
+    
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(MayObject::String(s.to_string()))
     }
 }

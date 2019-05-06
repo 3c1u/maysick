@@ -81,9 +81,9 @@ pub struct Tokens<'a> {
 }
 
 impl<'a> Tokens<'a> {
-    pub fn new(v: &'a Vec<Token>) -> Self {
+    pub fn new(v: &'a [Token]) -> Self {
         Tokens {
-            tokens: v.as_slice(),
+            tokens: v,
         }
     }
 

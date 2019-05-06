@@ -11,7 +11,7 @@ use std::rc::*;
 use crate::eval::object::*;
 use crate::eval::runtime_error::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct Env {
     parent: Option<Rc<RefCell<Env>>>,
     items_var: HashMap<String, MayObject>,
@@ -98,11 +98,11 @@ impl Env {
         }
     }
 
-    pub fn get(&self, key: &String) -> MayObject {
+    pub fn get(&self, key: &str) -> MayObject {
         self.get_opt(key).unwrap_or(MayObject::Nil)
     }
 
-    pub fn get_opt(&self, key: &String) -> Option<MayObject> {
+    pub fn get_opt(&self, key: &str) -> Option<MayObject> {
         match self.items_let.get(key) {
             Some(v) => Some(v.clone()),
             None => match self.items_var.get(key) {
@@ -118,7 +118,7 @@ impl Env {
         }
     }
 
-    fn find_owner_mut(&self, key: &String, me: Option<EnvRef>) -> (VariableType, Option<EnvRef>) {
+    fn find_owner_mut(&self, key: &str, me: Option<EnvRef>) -> (VariableType, Option<EnvRef>) {
         match self.items_let.get(key) {
             Some(_) => (VariableType::Let, me.clone()),
             None => match self.items_var.get(key) {

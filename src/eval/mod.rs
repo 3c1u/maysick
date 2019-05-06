@@ -46,7 +46,7 @@ pub fn eval_literal(l: &Literal) -> Result<MayObject, RuntimeError> {
     }
 }
 
-pub fn eval_infix(i: &Infix, a: MayObject, b: MayObject) -> Result<MayObject, RuntimeError> {
+pub fn eval_infix(i: Infix, a: MayObject, b: MayObject) -> Result<MayObject, RuntimeError> {
     match i {
         Infix::AddOp => MayObject::operator_add(&a, &b),
         Infix::SubOp => MayObject::operator_sub(&a, &b),
@@ -65,18 +65,18 @@ pub fn eval_expr(_e: EnvRef, x: &Expr) -> Result<MayObject, RuntimeError> {
         }
         Expr::Literal(l) => eval_literal(l),
         Expr::Infix(i, a, b) => eval_infix(
-            i,
+            *i,
             eval_expr(_e.clone(), a.as_ref())?,
             eval_expr(_e.clone(), b.as_ref())?,
         ),
         Expr::FnCall(n, arg) => {
-            let a = arg
-                .into_iter()
+            let a: Vec<MayObject> = arg
+                .iter()
                 .map(|a: &Expr| eval_expr(_e.clone(), a).unwrap())
                 .collect();
             let e = &mut _e.borrow_mut();
             match builtin::call_builtin_function(&n, &a) {
-                Ok(r) => Ok(r),
+                retval @ Ok(_) => retval,
                 Err(_) => {
                     // println!("'{}' called with args:\n{:#?}.", name, args);
                     if let MayObject::Fn(argname, block) = e.get(&n) {
@@ -112,25 +112,25 @@ pub fn eval_expr(_e: EnvRef, x: &Expr) -> Result<MayObject, RuntimeError> {
 
 pub fn eval_stmt(e: EnvRef, s: &Stmt) -> Result<MayObject, RuntimeError> {
     match s {
-        Stmt::FnDef(i, a, b) => {
-            let f = MayObject::Fn(a.clone(), b.clone());
-            e.borrow_mut().set_let(i.clone(), &f)?;
+        Stmt::FnDef(i, args, block) => {
+            let fndef = MayObject::Fn(args.clone(), block.clone());
+            e.borrow_mut().set_let(i.clone(), &fndef)?;
             Ok(MayObject::Nil)
         }
         Stmt::Let(i, _t, x) => {
-            let r = eval_expr(e.clone(), x)?;
-            e.borrow_mut().set_let(i.clone(), &r)?;
-            Ok(r)
+            let right_val = eval_expr(e.clone(), x)?;
+            e.borrow_mut().set_let(i.clone(), &right_val)?;
+            Ok(right_val)
         }
         Stmt::Var(i, _t, x) => {
-            let r = eval_expr(e.clone(), x)?;
-            e.borrow_mut().set_var(i.clone(), &r)?;
-            Ok(r)
+            let right_val = eval_expr(e.clone(), x)?;
+            e.borrow_mut().set_var(i.clone(), &right_val)?;
+            Ok(right_val)
         }
         Stmt::Subst(i, x) => {
-            let r = eval_expr(e.clone(), x)?;
-            e.borrow_mut().substitute(i.clone(), &r)?;
-            Ok(r)
+            let right_val = eval_expr(e.clone(), x)?;
+            e.borrow_mut().substitute(i.clone(), &right_val)?;
+            Ok(right_val)
         }
         Stmt::Return(orv) => match orv {
             Some(rv) => Ok(MayObject::RetVal(Box::new(eval_expr(e, rv)?))),

@@ -11,10 +11,10 @@ use libc::*;
 use std::io::{self, Write};
 
 pub fn call_builtin_function(
-    name: &String,
-    args: &Vec<MayObject>,
+    name: &str,
+    args: &[MayObject],
 ) -> Result<MayObject, RuntimeError> {
-    match name.as_str() {
+    match name {
         // IO系
         "print" => {
             if args.len() == 1 {
@@ -36,7 +36,7 @@ pub fn call_builtin_function(
             }
         }
         "random" => {
-            let r: i64 = unsafe { rand() as i64 };
+            let r: i64 = unsafe { i64::from(rand()) };
             Ok(MayObject::Integer(r))
         }
         "getchar" => {

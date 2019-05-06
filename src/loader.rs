@@ -20,8 +20,8 @@ fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
     let mut tokens: Vec<Token> = Vec::new();
 
     if let Ok(entries) = pbuf.read_dir() {
-        let mut entries_: Vec<_> = entries.map(|d| d.unwrap()).collect();
-        entries_.sort_by_key(|dir| dir.path());
+        let mut entries_: Vec<_> = entries.map(Result::unwrap).collect();
+        entries_.sort_by_key(std::fs::DirEntry::path);
 
         for entry in entries_ {
             let p = entry.path();
