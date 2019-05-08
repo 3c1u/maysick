@@ -32,7 +32,7 @@ fn get_utf8_char() -> Option<u32> {
             let mut v  = c & (0x3F >> cnt);
 
             assert!(cnt > 0, "Fragmented UTF-8 character.");
-            assert!(cnt < 5, "Unicode code point that cannot represented by 32-bit value.");
+            assert!(cnt < 5, "Unicode code point that cannot be represented by a single 32-bit value.");
 
             for _ in 0..cnt {
                 let c = u32::from(
