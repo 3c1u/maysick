@@ -172,7 +172,7 @@ impl MayObject {
 
 impl std::str::FromStr for MayObject {
     type Err = RuntimeError;
-    
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(MayObject::String(s.to_string()))
     }

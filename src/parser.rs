@@ -26,21 +26,7 @@ named_args!(take_token(token: Token)<Tokens, Token>,
 
 // Expr
 named!(parse_expr<Tokens, Expr>,
-    alt!(
-        apply!(parse_expr_infix, 100) | // TODO `f`の実装
-        parse_expr_fncall |
-        do_parse!(
-            apply!(take_token, Token::LParen) >>
-            r: parse_expr >>
-            apply!(take_token, Token::RParen) >>
-            (r)
-        ) |
-        // parse_expr_prefix |
-        parse_expr_if     |
-        parse_expr_while  |
-        parse_expr_ident   |
-        parse_expr_literal
-        )
+    apply!(parse_expr_left, 10)
 );
 
 named!(parse_expr_if<Tokens, Expr>,
@@ -83,64 +69,75 @@ named_args!(parse_expr_left(n: i64)<Tokens, Expr>,
         )
 );
 
-named_args!(parse_infix_op(op: Token, itype: Infix, priority: i64, n: i64)<Tokens, Expr>,
-            do_parse!(
-              verify!(take!(0), |_| priority <= n )    >>
-              left: apply!(parse_expr_left, priority - 1) >>
-              res : apply!(parse_infix_op_t,
-                           op,
-                           itype,
-                           priority,
-                           priority,
-                           left) >>
-              (res)
-            )
-);
+fn get_op_precedence(op: &Infix) -> i32 {
+    match op {
+        Infix::EqualOp => 100,
+        Infix::BinFnOp => 80,
+        Infix::ModOp => 20,
+        Infix::DivOp => 20,
+        Infix::MulOp => 20,
+        Infix::AndOp => 20,
+        Infix::OrOp => 10,
+        Infix::AddOp => 10,
+        Infix::SubOp => 10,
+    }
+}
 
-named_args!(parse_infix_op_t(op: Token, itype: Infix, priority: i64, n: i64, left: Expr)<Tokens, Expr>,
-            alt!(
-                do_parse!(
-                    verify!(take!(0), |_| priority == n ) >>
-                    apply!(take_token, op.clone()) >>
-                    comb: map!(apply!(parse_expr_left, priority - 1),
-                               |right| { Expr::Infix(itype, Box::new(left.clone()), Box::new(right)) })
-                    >>
-                    res : opt!(apply!(parse_infix_op_t_w, n, comb.clone())) >>
-                    (match res {
-                        Some(r) => r,
-                        None    => comb,
-                    })
-                )
-            )
-);
-
-named_args!(parse_infix_op_t_w(n: i64, left: Expr)<Tokens, Expr>,
-    alt!(
-        apply!(parse_infix_op_t,
-               Token::AddOp, Infix::AddOp, 2, n, left.clone()) |
-        apply!(parse_infix_op_t,
-               Token::SubOp, Infix::SubOp, 2, n, left.clone()) |
-        apply!(parse_infix_op_t,
-               Token::ModOp, Infix::ModOp, 1, n, left.clone()) |
-        apply!(parse_infix_op_t,
-               Token::MulOp, Infix::MulOp, 1, n, left.clone()) |
-        apply!(parse_infix_op_t,
-               Token::DivOp, Infix::DivOp, 1, n, left.clone())
-    )
-);
+fn op_to_infix(t: Token) -> Option<Infix> {
+    match t {
+        Token::EqualOp => Some(Infix::EqualOp),
+        Token::BinaryFnOp(_) => Some(Infix::BinFnOp),
+        Token::ModOp => Some(Infix::ModOp),
+        Token::DivOp => Some(Infix::DivOp),
+        Token::MulOp => Some(Infix::MulOp),
+        Token::AndOp => Some(Infix::AndOp),
+        Token::OrOp => Some(Infix::OrOp),
+        Token::AddOp => Some(Infix::AddOp),
+        Token::SubOp => Some(Infix::SubOp),
+        _ => None,
+    }
+}
 
 named_args!(parse_expr_infix(n: i64)<Tokens, Expr>,
-    alt!(
-        apply!(parse_infix_op,
-               Token::AddOp, Infix::AddOp, 2, n) |
-        apply!(parse_infix_op,
-               Token::SubOp, Infix::SubOp, 2, n) |
-        apply!(parse_infix_op,
-               Token::ModOp, Infix::ModOp, 1, n) |
-        apply!(parse_infix_op,
-               Token::MulOp, Infix::MulOp, 1, n) |
-        apply!(parse_infix_op,
-               Token::DivOp, Infix::DivOp, 1, n)
+    do_parse!(
+        // 0 means it has no infix operators
+        verify!(take!(0), |_| n != 0 ) >>
+        left: apply!(parse_expr_left, 0) >>
+        op_r: fold_many1!( do_parse!(
+            op: map_opt!(call!(take_any), op_to_infix) >>
+            right: apply!(parse_expr_left, 0) >>
+            (op, right)
+        ), Err(Some(left.clone())), |acc: Result<Expr, Option<Expr>>, item: (Infix, Expr) | {
+            let (op, rexpr) = item;
+
+            if let Ok(lval) = acc {
+                if let Expr::Infix(opl, lb, rb) = lval {
+                    if get_op_precedence(&opl) < get_op_precedence(&op) {
+                        Ok(
+                            Expr::Infix(opl,
+                                        lb,
+                                        Box::new(
+                                            Expr::Infix(op.clone(), rb, Box::new(rexpr.clone()))
+                                        )
+                            )
+                        )
+                    } else {
+                        Ok(
+                            Expr::Infix(op.clone(),
+                                        Box::new(Expr::Infix(opl, lb, rb)),
+                                        Box::new(rexpr.clone()))
+                        )
+                    }
+                } else {
+                    Err(None)
+                }
+            } else {
+                Ok(Expr::Infix(op.clone(), Box::new(left.clone()), Box::new(rexpr.clone())))
+            }
+        }) >>
+        (
+            op_r.unwrap()
+        )
     )
 );
 

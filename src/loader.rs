@@ -5,10 +5,10 @@
  */
 
 use nom::types::CompleteStr;
+use std::fs::File;
+use std::io::{BufReader, Read};
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
-use std::io::{Read, BufReader};
-use std::fs::File;
 
 use crate::ast::*;
 use crate::lexer::*;
@@ -83,7 +83,7 @@ fn obtain_program(path: &str) -> Result<Program, Error> {
     //"run"がディレクトリなら、探索を始める
     let is_dir = !pbuf.is_file();
     let exists = pbuf.exists();
-    
+
     if is_dir && exists {
         let tokens = get_token_from_directory(&pbuf).unwrap();
         parse_program(Tokens::new(&tokens))
@@ -98,13 +98,13 @@ fn obtain_program(path: &str) -> Result<Program, Error> {
     } else {
         // ファイルのとき
         pbuf.pop();
-        
+
         let fin = File::open(pbuf);
         let mut fin = BufReader::new(fin.unwrap());
-        
+
         let mut contents = String::new();
         fin.read_to_string(&mut contents).unwrap();
-        
+
         let tokens = token_line(CompleteStr::from(&contents as &str)).unwrap().1;
 
         parse_program(Tokens::new(&tokens))

@@ -82,9 +82,7 @@ pub struct Tokens<'a> {
 
 impl<'a> Tokens<'a> {
     pub fn new(v: &'a [Token]) -> Self {
-        Tokens {
-            tokens: v,
-        }
+        Tokens { tokens: v }
     }
 
     pub fn from_slice(s: &'a [Token]) -> Self {
