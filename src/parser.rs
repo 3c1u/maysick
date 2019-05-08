@@ -98,46 +98,50 @@ fn op_to_infix(t: Token) -> Option<Infix> {
     }
 }
 
+fn get_infix_precedence(expr: &Expr) -> i32 {
+    if let Expr::Infix(op, _, _) = expr {
+        get_op_precedence(op)
+    } else {
+        1000
+    }
+}
+
+fn swap_lop(expr: Expr) -> Expr {
+    if let Expr::Infix(op, le, re) = expr {
+        if get_infix_precedence(&le) < get_op_precedence(&op) {
+            if let Expr::Infix(op_l, le_l, re_l) = le.as_ref().clone() {
+                Expr::Infix(op_l, le_l, Box::new(swap_lop(Expr::Infix(op, re_l, re))))
+            } else {
+                Expr::Infix(op, le, re)
+            }
+        } else {
+            Expr::Infix(op, le, re)
+        }
+    } else {
+        expr
+    }
+}
+
 named_args!(parse_expr_infix(n: i64)<Tokens, Expr>,
     do_parse!(
         // 0 means it has no infix operators
         verify!(take!(0), |_| n != 0 ) >>
         left: apply!(parse_expr_left, 0) >>
-        op_r: fold_many1!( do_parse!(
+        op_r: map_opt!(fold_many1!( do_parse!(
             op: map_opt!(call!(take_any), op_to_infix) >>
             right: apply!(parse_expr_left, 0) >>
             (op, right)
         ), Err(Some(left.clone())), |acc: Result<Expr, Option<Expr>>, item: (Infix, Expr) | {
-            let (op, rexpr) = item;
+            let (op, rval) = item;
 
             if let Ok(lval) = acc {
-                if let Expr::Infix(opl, lb, rb) = lval {
-                    if get_op_precedence(&opl) < get_op_precedence(&op) {
-                        Ok(
-                            Expr::Infix(opl,
-                                        lb,
-                                        Box::new(
-                                            Expr::Infix(op.clone(), rb, Box::new(rexpr.clone()))
-                                        )
-                            )
-                        )
-                    } else {
-                        Ok(
-                            Expr::Infix(op.clone(),
-                                        Box::new(Expr::Infix(opl, lb, rb)),
-                                        Box::new(rexpr.clone()))
-                        )
-                    }
-                } else {
-                    Err(None)
-                }
+                let tree = Expr::Infix(op, Box::new(lval), Box::new(rval));
+                Ok(swap_lop(tree))
             } else {
-                Ok(Expr::Infix(op.clone(), Box::new(left.clone()), Box::new(rexpr.clone())))
+                Ok(Expr::Infix(op.clone(), Box::new(left.clone()), Box::new(rval.clone())))
             }
-        }) >>
-        (
-            op_r.unwrap()
-        )
+        }), |v: Result<Expr, Option<Expr>>| v.ok()) >>
+        (op_r)
     )
 );
 
@@ -430,6 +434,38 @@ mod test {
                         Box::new(Expr::Literal(Literal::Integer(2)))
                     )),
                     Box::new(Expr::Literal(Literal::Integer(3)))
+                )
+            ))
+        );
+    }
+
+    #[test]
+    fn t_expr_infix_04() {
+        let tokens = vec![
+            Token::Integer(11),
+            Token::SubOp,
+            Token::Integer(2),
+            Token::MulOp,
+            Token::Integer(3),
+            Token::EqualOp,
+            Token::Integer(4),
+        ];
+        assert_eq!(
+            parse_expr(Tokens::new(&tokens)),
+            Ok((
+                Tokens::empty(),
+                Expr::Infix(
+                    Infix::SubOp,
+                    Box::new(Expr::Literal(Literal::Integer(11))),
+                    Box::new(Expr::Infix(
+                        Infix::MulOp,
+                        Box::new(Expr::Literal(Literal::Integer(2))),
+                        Box::new(Expr::Infix(
+                            Infix::EqualOp,
+                            Box::new(Expr::Literal(Literal::Integer(3))),
+                            Box::new(Expr::Literal(Literal::Integer(4)))
+                        )),
+                    )),
                 )
             ))
         );
