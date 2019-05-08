@@ -98,7 +98,7 @@ pub fn call_builtin_function(name: &str, args: &[MayObject]) -> Result<MayObject
         }
         "random" => {
             let mut rng = rand::thread_rng();
-            let rnum = rng.next_u64() as i64;
+            let rnum = (rng.next_u64() >> 1) as i64;
             Ok(MayObject::Integer(rnum))
         }
         "getchar" => {
