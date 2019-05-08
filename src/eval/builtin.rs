@@ -9,6 +9,7 @@ use crate::eval::runtime_error::*;
 
 use libc::*;
 use std::io::{self, Write};
+use std::convert::TryFrom;
 
 pub fn call_builtin_function(
     name: &str,
@@ -198,9 +199,9 @@ pub fn call_builtin_function(
         }
         "char_from" => {
             if args.len() == 1 {
-                let n = args[0].to_raw_integer()? as u8;
+                let n = args[0].to_raw_integer()? as u32;
                 let mut s = String::new();
-                s.push(n as char);
+                s.push(char::try_from(n).unwrap());
                 Ok(MayObject::String(s))
             } else {
                 Err(RuntimeError::ArgumentErr)
