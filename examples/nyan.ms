@@ -3,4 +3,3 @@ fn displayNyan() {
 }
 print('Look at this adorable cat: ');
 displayNyan();
-

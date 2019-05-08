@@ -6,8 +6,6 @@
 
 #[macro_use]
 extern crate nom;
-extern crate clap;
-extern crate libc;
 
 use clap::{App, Arg, SubCommand};
 
@@ -20,12 +18,6 @@ pub mod lexer;
 pub mod loader;
 pub mod parser;
 pub mod token;
-
-mod cl {
-    extern "C" {
-        pub fn clock() -> ::libc::clock_t;
-    }
-}
 
 fn parse_args() -> Result<(), std::io::Error> {
     let matches = App::new("maysick")
@@ -92,10 +84,5 @@ fn parse_args() -> Result<(), std::io::Error> {
 }
 
 fn main() -> Result<(), std::io::Error> {
-    // libcの乱数生成器の初期化
-    unsafe {
-        let t = cl::clock();
-        libc::srand(t as u32);
-    }
     parse_args()
 }
