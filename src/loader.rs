@@ -7,6 +7,8 @@
 use nom::types::CompleteStr;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
+use std::io::{Read, BufReader};
+use std::fs::File;
 
 use crate::ast::*;
 use crate::lexer::*;
@@ -75,28 +77,39 @@ fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
 fn obtain_program(path: &str) -> Result<Program, Error> {
     // 現在位置から"run"ディレクトリを探してみる
     let mut pbuf = PathBuf::from(path);
+    let file_exists = pbuf.is_file();
     pbuf.push("run");
 
     //"run"がディレクトリなら、探索を始める
     let is_dir = !pbuf.is_file();
     let exists = pbuf.exists();
+    
     if is_dir && exists {
         let tokens = get_token_from_directory(&pbuf).unwrap();
         parse_program(Tokens::new(&tokens))
             .map(|(_, r)| r)
             .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
-    } else if !exists {
+    } else if !file_exists {
         // 存在しないとき
         Err(Error::new(
             ErrorKind::NotFound,
             "\"run\" directory not found.",
         ))
     } else {
-        // ディレクトリのとき
-        Err(Error::new(
-            ErrorKind::NotFound,
-            "\"run\" is not a directory.",
-        ))
+        // ファイルのとき
+        pbuf.pop();
+        
+        let fin = File::open(pbuf);
+        let mut fin = BufReader::new(fin.unwrap());
+        
+        let mut contents = String::new();
+        fin.read_to_string(&mut contents).unwrap();
+        
+        let tokens = token_line(CompleteStr::from(&contents as &str)).unwrap().1;
+
+        parse_program(Tokens::new(&tokens))
+            .map(|(_, r)| r)
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
     }
 }
 

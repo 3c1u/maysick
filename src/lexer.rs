@@ -86,7 +86,10 @@ named!(token_symbol<CompleteStr, Token>,
            tag!("(")  => { |_| Token::LParen }  |
            tag!(")")  => { |_| Token::RParen }  |
            tag!(",")  => { |_| Token::Comma }   |
-           tag!(":")  => { |_| Token::Colon }
+           tag!("{")  => { |_| Token::LBlock }  |
+           tag!("}")  => { |_| Token::RBlock } |
+           tag!(":")  => { |_| Token::Colon } |
+           tag!(";")  => { |_| Token::EndLine }
        )
 );
 
@@ -143,7 +146,7 @@ named!(token_lex<CompleteStr, Token>,
        )
 );
 
-named!(token_line<CompleteStr, Vec<Token>>,
+named!(pub token_line<CompleteStr, Vec<Token>>,
        ws!(many0!(token_lex))
 );
 
