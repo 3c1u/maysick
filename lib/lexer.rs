@@ -39,6 +39,7 @@ fn parse_reserved_keyword(s: &str) -> Option<Token> {
         "else" => Some(Token::KElse),
         "while" => Some(Token::KWhile),
         "return" => Some(Token::KReturn),
+        "import" => Some(Token::KImport),
         _ => None,
     }
 }
@@ -78,17 +79,21 @@ named!(token_binfop<CompleteStr, Token>,
 // Symbol parser
 named!(token_symbol<CompleteStr, Token>,
        alt!(
-           tag!("->") => { |_| Token::Arrow }   |
-           tag!("=")  => { |_| Token::EqualOp } |
-           tag!("+")  => { |_| Token::AddOp }   |
-           tag!("-")  => { |_| Token::SubOp }   |
-           tag!("%")  => { |_| Token::ModOp }   |
-           tag!("(")  => { |_| Token::LParen }  |
-           tag!(")")  => { |_| Token::RParen }  |
-           tag!(",")  => { |_| Token::Comma }   |
-           tag!("{")  => { |_| Token::LBlock }  |
-           tag!("}")  => { |_| Token::RBlock } |
-           tag!(":")  => { |_| Token::Colon } |
+           tag!("->") => { |_| Token::Arrow }        |
+           tag!("::")  => { |_| Token::DoubleColon } |
+           tag!("=")  => { |_| Token::EqualOp }      |
+           tag!("+")  => { |_| Token::AddOp }        |
+           tag!("-")  => { |_| Token::SubOp }        |
+           tag!("/")  => { |_| Token::DivOp }        |
+           tag!("*")  => { |_| Token::MulOp }        |
+           tag!("%")  => { |_| Token::ModOp }        |
+           tag!("(")  => { |_| Token::LParen }       |
+           tag!(")")  => { |_| Token::RParen }       |
+           tag!(".")  => { |_| Token::Dot }          |
+           tag!(",")  => { |_| Token::Comma }        |
+           tag!("{")  => { |_| Token::LBlock }       |
+           tag!("}")  => { |_| Token::RBlock }       |
+           tag!(":")  => { |_| Token::Colon }        |
            tag!(";")  => { |_| Token::EndLine }
        )
 );
@@ -122,6 +127,11 @@ named!(token_integer<CompleteStr, Token>,
                do_parse!(
                    tag!("0x") >>
                    num: map_res!(nom::hex_digit, |res: CompleteStr| i64::from_str_radix(res.0, 16)) >>
+                   (num)
+               ) |
+               do_parse!(
+                   tag!("0b") >>
+                   num: map_res!(nom::digit, |res: CompleteStr| i64::from_str_radix(res.0, 2)) >>
                    (num)
                ) |
                map_res!(nom::digit, |res: CompleteStr| {
@@ -173,7 +183,9 @@ mod test {
     #[test]
     fn t_keyword() {
         let empty = CompleteStr::from("");
-        let pat = vec!["fn", "let", "var", "if", "else", "while", "return"];
+        let pat = vec![
+            "fn", "let", "var", "if", "else", "while", "return", "import",
+        ];
         let res = vec![
             Token::KFn,
             Token::KLet,
@@ -182,6 +194,7 @@ mod test {
             Token::KElse,
             Token::KWhile,
             Token::KReturn,
+            Token::KImport,
         ];
         let cnt = pat.len();
         for i in 0..cnt {

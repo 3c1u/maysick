@@ -31,14 +31,14 @@ pub struct Arg {
 }
 
 /** # Statement
- ## Types
- A Statement has those types:
- * Function definition
- * Let/Var statment
- * Substitution
- * Return
- * Single expression (commonly terminated by a semicolon)
- */
+## Types
+A Statement has those types:
+* Function definition
+* Let/Var statment
+* Substitution
+* Return
+* Single expression (commonly terminated by a semicolon)
+*/
 #[derive(Clone, Debug, PartialEq)]
 pub enum Stmt {
     /**
@@ -75,7 +75,7 @@ pub enum Stmt {
 
     Let statment is immutable, which cannot be changed by substitutions which is described below,
     while Var statement is mutable, and it is possible to reassign any value to the variable.
-    
+
     ```plaintext
     let a = 3;
     var b = 4;
@@ -90,6 +90,8 @@ pub enum Stmt {
 
     Return(Option<Expr>),
     Expr(Expr),
+
+    Import(String),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]

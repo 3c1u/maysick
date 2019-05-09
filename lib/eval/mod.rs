@@ -137,5 +137,9 @@ pub fn eval_stmt(e: EnvRef, s: &Stmt) -> Result<MayObject, RuntimeError> {
             None => Ok(MayObject::RetVal(Box::new(MayObject::Nil))),
         },
         Stmt::Expr(x) => eval_expr(e, x),
+        Stmt::Import(_i) => {
+            // debug!("New import: {:?}", i);
+            Ok(MayObject::Nil)
+        }
     }
 }

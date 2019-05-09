@@ -69,7 +69,7 @@ named_args!(parse_expr_left(n: i64)<Tokens, Expr>,
         )
 );
 
-fn get_op_precedence(op: &Infix) -> i32 {
+fn get_op_precedence(op: Infix) -> i32 {
     match op {
         Infix::EqualOp => 100,
         Infix::BinFnOp => 80,
@@ -100,7 +100,7 @@ fn op_to_infix(t: Token) -> Option<Infix> {
 
 fn get_infix_precedence(expr: &Expr) -> i32 {
     if let Expr::Infix(op, _, _) = expr {
-        get_op_precedence(op)
+        get_op_precedence(*op)
     } else {
         1000
     }
@@ -108,7 +108,7 @@ fn get_infix_precedence(expr: &Expr) -> i32 {
 
 fn swap_lop(expr: Expr) -> Expr {
     if let Expr::Infix(op, le, re) = expr {
-        if get_infix_precedence(&le) < get_op_precedence(&op) {
+        if get_infix_precedence(&le) < get_op_precedence(op) {
             if let Expr::Infix(op_l, le_l, re_l) = le.as_ref().clone() {
                 Expr::Infix(op_l, le_l, Box::new(swap_lop(Expr::Infix(op, re_l, re))))
             } else {
@@ -138,7 +138,7 @@ named_args!(parse_expr_infix(n: i64)<Tokens, Expr>,
                 let tree = Expr::Infix(op, Box::new(lval), Box::new(rval));
                 Ok(swap_lop(tree))
             } else {
-                Ok(Expr::Infix(op.clone(), Box::new(left.clone()), Box::new(rval.clone())))
+                Ok(Expr::Infix(op, Box::new(left.clone()), Box::new(rval.clone())))
             }
         }), |v: Result<Expr, Option<Expr>>| v.ok()) >>
         (op_r)
@@ -205,7 +205,8 @@ named!(pub parse_stmt<Tokens, Stmt>,
         parse_stmt_var    |
         parse_stmt_expr   |
         parse_stmt_blocked_expr |
-        parse_stmt_subst
+        parse_stmt_subst |
+        parse_stmt_import
     )
 );
 
@@ -228,6 +229,22 @@ named!(pub parse_stmt_return<Tokens, Stmt>,
             apply!(take_token, Token::EndLine) >>
             (
                 Stmt::Return(retval)
+            )
+    )
+);
+
+named!(pub parse_stmt_import<Tokens, Stmt>,
+    do_parse!(
+            apply!(take_token, Token::KImport) >>
+            id: map_opt!(take_any, |r| {
+                    match r {
+                        Token::String(v) => Some(v),
+                        _                => None,
+                    }
+            }) >>
+            apply!(take_token, Token::EndLine) >>
+            (
+                Stmt::Import(id)
             )
     )
 );

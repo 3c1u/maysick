@@ -20,6 +20,7 @@ pub enum Token {
     KElse,   // <tested>
     KWhile,  // <tested>
     KReturn, // <tested>
+    KImport, // <not-tested>
 
     Ident(String), // <tested>
 
@@ -46,6 +47,12 @@ pub enum Token {
 
     // ->
     Arrow, // <not-tested>
+
+    // ::
+    DoubleColon,
+
+    // .
+    Dot,
 
     // (
     LParen, // <not-tested>
