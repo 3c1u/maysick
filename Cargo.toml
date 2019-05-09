@@ -4,6 +4,19 @@ name = "maysick"
 version = "0.1.0"
 description = "A programming language of directories."
 edition = "2018"
+
+[lib]
+name = "maysick"
+path = "lib/lib.rs"
+
+[[bin]]
+name = "maysick"
+path = "src/main.rs"
+
+[[bin]]
+name = "maylsp"
+path = "lsp-server/main.rs"
+
 [dependencies]
 clap = "*"
 nom = "*"
