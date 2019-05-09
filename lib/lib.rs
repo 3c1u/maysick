@@ -13,6 +13,12 @@ pub mod loader;
 pub mod parser;
 pub mod token;
 
+/**
+ * Parse arguments as a maysick interpreter.
+ * 
+ * This function parses command-line arguments as a maysick interpreter.
+ * The executable "maysick" uses this internally.
+ */
 pub fn parse_args() -> Result<(), std::io::Error> {
     let matches = App::new("maysick")
         .version(env!("CARGO_PKG_VERSION"))
