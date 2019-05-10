@@ -80,7 +80,7 @@ named!(token_binfop<CompleteStr, Token>,
 named!(token_symbol<CompleteStr, Token>,
        alt!(
            tag!("->") => { |_| Token::Arrow }        |
-           tag!("::")  => { |_| Token::DoubleColon } |
+           tag!("::") => { |_| Token::DoubleColon }  |
            tag!("=")  => { |_| Token::EqualOp }      |
            tag!("+")  => { |_| Token::AddOp }        |
            tag!("-")  => { |_| Token::SubOp }        |
