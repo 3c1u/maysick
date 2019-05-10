@@ -70,10 +70,11 @@ pub fn eval_expr(_e: EnvRef, x: &Expr) -> Result<MayObject, RuntimeError> {
             eval_expr(_e.clone(), b.as_ref())?,
         ),
         Expr::FnCall(n, arg) => {
-            let a: Vec<MayObject> = arg
+            let a: Result<Vec<MayObject>, _> = arg
                 .iter()
-                .map(|a: &Expr| eval_expr(_e.clone(), a).unwrap())
+                .map(|a: &Expr| eval_expr(_e.clone(), a))
                 .collect();
+            let a = a?;
             let e = &mut _e.borrow_mut();
             match builtin::call_builtin_function(&n, &a) {
                 retval @ Ok(_) => retval,

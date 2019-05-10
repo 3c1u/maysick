@@ -81,7 +81,7 @@ pub fn call_builtin_function(name: &str, args: &[MayObject]) -> Result<MayObject
             if args.len() == 1 {
                 let s = args[0].to_raw_string()?;
                 print!("{}", s);
-                io::stdout().flush().unwrap(); // TODO
+                io::stdout().flush().map_err(|_| RuntimeError::IOError)?;
                 Ok(MayObject::Nil)
             } else {
                 Err(RuntimeError::ArgumentErr)
@@ -107,7 +107,7 @@ pub fn call_builtin_function(name: &str, args: &[MayObject]) -> Result<MayObject
                 Ok(MayObject::Nil)
             } else {
                 let mut s = String::new();
-                s.push(char::try_from(r as u32).unwrap());
+                s.push(char::try_from(r as u32).map_err(|_| RuntimeError::CastError)?);
                 Ok(MayObject::String(s))
             }
         }
@@ -262,7 +262,7 @@ pub fn call_builtin_function(name: &str, args: &[MayObject]) -> Result<MayObject
             if args.len() == 1 {
                 let n = args[0].to_raw_integer()? as u32;
                 let mut s = String::new();
-                s.push(char::try_from(n).unwrap());
+                s.push(char::try_from(n).map_err(|_| RuntimeError::CastError)?);
                 Ok(MayObject::String(s))
             } else {
                 Err(RuntimeError::ArgumentErr)
