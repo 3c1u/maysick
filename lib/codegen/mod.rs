@@ -28,6 +28,30 @@ pub struct Variable {
     pub immutable: bool,
 }
 
+pub fn cast_code(c: &String, ta: ObjectType, tb: ObjectType) -> String {
+    let mut code = String::new();
+
+    code.push_str(match tb {
+        ObjectType::Integer => "m_to_integer",
+        ObjectType::String => "m_to_string",
+        ObjectType::Bool => "0 != ",
+        _ => "",
+    });
+    code.push('(');
+    code.push_str(match ta {
+        ObjectType::Integer => "m_any_int",
+        ObjectType::String => "m_any_string",
+        ObjectType::Bool => "m_any_bool",
+        ObjectType::Nil => "m_any_nil",
+    });
+    code.push('(');
+    code.push_str(&c);
+    code.push(')');
+    code.push(')');
+
+    code
+}
+
 impl Codegen for Expr {
     fn generate(
         &self,
@@ -121,7 +145,7 @@ impl Codegen for Expr {
                     if types[i] == sym.arguments[i] {
                         code.push_str(&args[i].0);
                     } else {
-
+                        code.push_str(&cast_code(&args[i].0, types[i], sym.arguments[i]));
                     }
                 }
 

@@ -102,6 +102,29 @@ enum {
 } maysick_type;
 
 // type-cast for compiler-generated code
+maysick_any m_any_int(m_int i);
+
+maysick_any m_any_int(m_int i) {
+  maysick_any a;
+  a.type           = M_INTEGER;
+  a.entity.integer = i;
+  return a;
+}
+
+maysick_any m_any_string(maysick_string *s) {
+  maysick_any a;
+  a.type          = M_STRING;
+  a.entity.string = s;
+  return a;
+}
+
+maysick_any m_any_bool(bool b) {
+  maysick_any a;
+  a.type           = M_BOOL;
+  a.entity.boolean = b;
+  return a;
+}
+
 maysick_string *m_to_string(maysick_any a) {
   maysick_string *s;
 
