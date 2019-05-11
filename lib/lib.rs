@@ -11,6 +11,7 @@ pub mod eval;
 pub mod lexer;
 pub mod loader;
 pub mod parser;
+pub mod prelude;
 pub mod token;
 
 /**
@@ -70,12 +71,12 @@ pub fn parse_args() -> Result<(), std::io::Error> {
             .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "Input file is not specified."))?;
         loader::run_interpreter(cpath);
     } else if let Some(matches) = matches.subcommand_matches("compile") {
-        let _cpath = matches
+        let cpath = matches
             .value_of("INPUT")
             .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "Input file is not specified."))?;
         let _bpath = matches.value_of("INPUT").unwrap_or("a.out");
         let _lflag = matches.occurrences_of("e") > 0;
-        // Yah build!!
+        loader::compile(cpath);
     }
 
     Ok(())

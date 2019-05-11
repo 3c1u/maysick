@@ -15,6 +15,8 @@ use crate::lexer::*;
 use crate::parser::*;
 use crate::token::*;
 
+use crate::codegen;
+
 use crate::eval;
 use crate::eval::env::*;
 
@@ -119,6 +121,18 @@ pub fn run_interpreter(path: &str) {
         Ok(p) => {
             let e = Env::new_ref();
             eval::eval(e, p).unwrap();
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+        }
+    }
+}
+
+pub fn compile(path: &str) {
+    let p_ = obtain_program(path);
+    match p_ {
+        Ok(p) => {
+            codegen::generate_code(p);
         }
         Err(e) => {
             println!("Error: {}", e);
