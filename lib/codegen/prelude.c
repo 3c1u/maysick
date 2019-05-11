@@ -20,13 +20,13 @@ typedef struct {
     char *     __u8;
     uintptr_t *__n;
   } head;
-} maysick_string;
+} m_string;
 
 #define __aligned(n, a) (n & (~a)) + (n & a != 0 ? a : 0)
 #define aligned(n, align) (__aligned((n), (align - 1)))
 
-maysick_string *m_string_with_capacity(size_t size) {
-  maysick_string *str = calloc(1, sizeof(maysick_string));
+m_string *m_string_with_capacity(size_t size) {
+  m_string *str = calloc(1, sizeof(m_string));
 
   str->len       = 0;
   str->size      = size < M_INIT_STRSIZE ? M_INIT_STRSIZE : aligned(size, 16);
@@ -35,11 +35,11 @@ maysick_string *m_string_with_capacity(size_t size) {
   return str;
 }
 
-maysick_string *m_string_new() { return m_string_with_capacity(0); }
+m_string *m_string_new() { return m_string_with_capacity(0); }
 
-maysick_string *m_string_from_cstr(const char *cstr) {
-  size_t          len = strlen(cstr);
-  maysick_string *s   = m_string_with_capacity(len);
+m_string *m_string_from_cstr(const char *cstr) {
+  size_t    len = strlen(cstr);
+  m_string *s   = m_string_with_capacity(len);
 
   for (size_t i = 0; i < len; i++) {
     s->head.__u8[i] = cstr[i];
@@ -48,9 +48,9 @@ maysick_string *m_string_from_cstr(const char *cstr) {
   return s;
 }
 
-void m_string_free(maysick_string *str) { free(str->head.__u8); }
+void m_string_free(m_string *str) { free(str->head.__u8); }
 
-void m_string_expand(maysick_string *str) {
+void m_string_expand(m_string *str) {
   uintptr_t *head_new =
       calloc(sizeof(uintptr_t), str->size >> (sizeof(uintptr_t) >> 1));
 
@@ -64,13 +64,13 @@ void m_string_expand(maysick_string *str) {
   str->size     = str->size << 1;
 }
 
-void m_string_expand_if_needed(maysick_string *str) {
+void m_string_expand_if_needed(m_string *str) {
   if (aligned(str->len, 16) <= str->size)
     m_string_expand(str);
 }
 
-maysick_string *m_string_concat(maysick_string *a, maysick_string *b) {
-  maysick_string *c = m_string_with_capacity(a->len + b->len);
+m_string *m_string_concat(m_string *a, m_string *b) {
+  m_string *c = m_string_with_capacity(a->len + b->len);
 
   for (size_t i = 0, s = a->size >> (sizeof(uintptr_t)); i < s; ++i) {
     c->head.__n[i] = a->head.__n[i];
@@ -88,9 +88,9 @@ maysick_string *m_string_concat(maysick_string *a, maysick_string *b) {
 typedef struct {
   uint16_t type;
   union {
-    m_int           integer;
-    maysick_string *string;
-    bool            boolean;
+    m_int     integer;
+    m_string *string;
+    bool      boolean;
   } entity;
 } maysick_any;
 
@@ -111,7 +111,7 @@ maysick_any m_any_int(m_int i) {
   return a;
 }
 
-maysick_any m_any_string(maysick_string *s) {
+maysick_any m_any_string(m_string *s) {
   maysick_any a;
   a.type          = M_STRING;
   a.entity.string = s;
@@ -125,8 +125,8 @@ maysick_any m_any_bool(bool b) {
   return a;
 }
 
-maysick_string *m_to_string(maysick_any a) {
-  maysick_string *s;
+m_string *m_to_string(maysick_any a) {
+  m_string *s;
 
   switch (a.type) {
   case M_STRING:
@@ -134,7 +134,7 @@ maysick_string *m_to_string(maysick_any a) {
     break;
   case M_INTEGER:
     s = m_string_new();
-    sprintf(s->head.__u8, "%d", a.entity.integer);
+    sprintf(s->head.__u8, "%lld", a.entity.integer);
     return s;
     break;
   case M_BOOL:
@@ -174,26 +174,96 @@ m_int m_to_integer(maysick_any a) {
 
 // prototype of built-in functions
 
-void            _mS__print(maysick_string *msg);
-void            _mS__println(maysick_string *msg);
-m_int           _m_i_random();
-m_int           _m_i_getchar();
-maysick_string *_m_S_readline();
+void      _mS__print(m_string *msg);
+void      _mS__println(m_string *msg);
+m_int     _m_i_random();
+m_string *_m_S_getchar();
+m_string *_m_S_readline();
 
-m_int _m_i_slen(maysick_string *str);
-m_int _mSi_i_char_at(maysick_string *str, m_int pos);
+m_int     _m_i_slen(m_string *str);
+m_int     _mSi_i_char_at(m_string *str, m_int pos);
+m_string *_mi_S_char_from(m_int c);
+m_string *_mi_S_integer_as_hex(m_int c);
 
 // implementation of built-in functions
 
-void _mS__print(maysick_string *msg) { printf("%s", msg->head.__u8); }
-void _mS__println(maysick_string *msg) { printf("%s\n", msg->head.__u8); }
+void _mS__print(m_string *msg) { printf("%s", msg->head.__u8); }
+void _mS__println(m_string *msg) { printf("%s\n", msg->head.__u8); }
 
 m_int _m_i_random() { return (m_int)rand(); }
-m_int _m_i_getchar() { return getchar(); }
 
-maysick_string *_m_S_readline() {
-  maysick_string *str = m_string_new();
+m_string *_m_S_getchar() {
+  m_string *s = m_string_new();
+  int       c = getchar();
+
+  if (c == -1) {
+    return s; // EOF fallback
+  }
+
+  if (c <= 0x7F) {
+    s->head.__u8[0] = c;
+    s->len          = 1;
+  } else { // might be UTF-8
+    uint32_t cnt    = __builtin_clz((~c) & 0xFF) - 24;
+    s->len          = cnt;
+    s->head.__u8[0] = (char)c;
+    for (int i = 1; i < cnt; i++) {
+      s->head.__u8[i] = getchar();
+    }
+  }
+
+  return s;
+}
+
+m_string *_m_S_readline() {
+  m_string *str = m_string_new();
   return str;
+}
+
+m_int _m_i_slen(m_string *str) { return (m_int)str->len; }
+
+m_int _mSi_i_char_at(m_string *str, m_int pos) {
+  size_t         j = 0;
+  unsigned char *s = str->head.__u8;
+
+  for (size_t i = 0; i < pos; i++) {
+    char c = s[j];
+    if (c <= 0x7F)
+      j++;
+    else {
+      j += __builtin_clz((~c) & 0xFF) - 24;
+    }
+  }
+
+  unsigned char c   = s[j];
+  uint32_t      cnt = __builtin_clz((~c) & 0xFF) - 25;
+  uint32_t      ch  = c & (0x3F >> cnt);
+
+  if (c <= 0x7F)
+    return (m_int)c;
+
+  for (size_t i = 0; i < cnt; i++) {
+    ch = (ch << 6) | (s[++j] & 0x3F);
+  }
+
+  return (m_int)ch;
+}
+
+m_string *_mi_S_char_from(m_int c) {
+  m_string *s = m_string_new();
+
+  if (c <= 0x7F) {
+    s->head.__u8[0] = c;
+    s->len          = 1;
+  }
+
+  return s;
+}
+
+m_string *_mi_S_integer_as_hex(m_int c) {
+  m_string *s = m_string_new();
+  sprintf(s->head.__u8, "%X", c);
+  return s;
 }
 
 // this symbol will be emitted by maysick compiler

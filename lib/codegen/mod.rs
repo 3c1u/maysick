@@ -31,6 +31,10 @@ pub struct Variable {
 pub fn cast_code(c: &String, ta: ObjectType, tb: ObjectType) -> String {
     let mut code = String::new();
 
+    if ta == tb {
+        return c.to_owned();
+    }
+
     code.push_str(match tb {
         ObjectType::Integer => "m_to_integer",
         ObjectType::String => "m_to_string",
@@ -118,9 +122,10 @@ impl Codegen for Expr {
 
                     return (code, ObjectType::Integer);
                 } else {
-                    // TODO
                     code.push_str("m_string_concat(");
+                    code.push_str(&cast_code(&a.0, a.1, ObjectType::String));
                     code.push(',');
+                    code.push_str(&cast_code(&b.0, b.1, ObjectType::String));
                     code.push(')');
                     return (code, ObjectType::String);
                 }
@@ -150,6 +155,8 @@ impl Codegen for Expr {
                 }
 
                 code.push(')');
+
+                return (code, sym.retval);
             }
             Expr::If(c, b) => {}
             Expr::While(c, b) => {}
@@ -249,6 +256,78 @@ impl GlobalCodegen {
                     name: "println".to_owned(),
                     arguments: vec![ObjectType::String],
                     retval: ObjectType::Nil,
+                    is_maysick_symbol: true,
+                }],
+            ),
+        );
+        self.fn_syms.insert(
+            "print".to_owned(),
+            (
+                true,
+                vec![Symbol {
+                    name: "print".to_owned(),
+                    arguments: vec![ObjectType::String],
+                    retval: ObjectType::Nil,
+                    is_maysick_symbol: true,
+                }],
+            ),
+        );
+        self.fn_syms.insert(
+            "getchar".to_owned(),
+            (
+                true,
+                vec![Symbol {
+                    name: "getchar".to_owned(),
+                    arguments: vec![],
+                    retval: ObjectType::String,
+                    is_maysick_symbol: true,
+                }],
+            ),
+        );
+        self.fn_syms.insert(
+            "random".to_owned(),
+            (
+                true,
+                vec![Symbol {
+                    name: "random".to_owned(),
+                    arguments: vec![],
+                    retval: ObjectType::Integer,
+                    is_maysick_symbol: true,
+                }],
+            ),
+        );
+        self.fn_syms.insert(
+            "char_at".to_owned(),
+            (
+                true,
+                vec![Symbol {
+                    name: "char_at".to_owned(),
+                    arguments: vec![ObjectType::String, ObjectType::Integer],
+                    retval: ObjectType::Integer,
+                    is_maysick_symbol: true,
+                }],
+            ),
+        );
+        self.fn_syms.insert(
+            "char_from".to_owned(),
+            (
+                true,
+                vec![Symbol {
+                    name: "char_from".to_owned(),
+                    arguments: vec![ObjectType::Integer],
+                    retval: ObjectType::String,
+                    is_maysick_symbol: true,
+                }],
+            ),
+        );
+        self.fn_syms.insert(
+            "integer_as_hex".to_owned(),
+            (
+                true,
+                vec![Symbol {
+                    name: "integer_as_hex".to_owned(),
+                    arguments: vec![ObjectType::Integer],
+                    retval: ObjectType::String,
                     is_maysick_symbol: true,
                 }],
             ),
