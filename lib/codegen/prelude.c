@@ -22,7 +22,7 @@ typedef struct {
   } head;
 } m_string;
 
-#define __aligned(n, a) (n & (~a)) + (n & a != 0 ? a : 0)
+#define __aligned(n, a) (n & (~a)) + ((n & a) != 0 ? (a + 1) : 0)
 #define aligned(n, align) (__aligned((n), (align - 1)))
 
 m_string *m_string_with_capacity(size_t size) {
@@ -40,6 +40,8 @@ m_string *m_string_new() { return m_string_with_capacity(0); }
 m_string *m_string_from_cstr(const char *cstr) {
   size_t    len = strlen(cstr);
   m_string *s   = m_string_with_capacity(len);
+
+  s->len = len;
 
   for (size_t i = 0; i < len; i++) {
     s->head.__u8[i] = cstr[i];
@@ -72,13 +74,16 @@ void m_string_expand_if_needed(m_string *str) {
 m_string *m_string_concat(m_string *a, m_string *b) {
   m_string *c = m_string_with_capacity(a->len + b->len);
 
-  for (size_t i = 0, s = a->size >> (sizeof(uintptr_t)); i < s; ++i) {
-    c->head.__n[i] = a->head.__n[i];
+  for (size_t i = 0, j = 0, s = a->size; i < s; i += sizeof(uintptr_t)) {
+    c->head.__n[j] = a->head.__n[j];
+    j++;
   }
 
   for (size_t i = 0, s = b->len, h = a->len; i < s; ++i) {
     c->head.__u8[i + h] = b->head.__u8[i];
   }
+
+  c->len = a->len + b->len;
 
   return c;
 }
@@ -102,7 +107,14 @@ enum {
 } maysick_type;
 
 // type-cast for compiler-generated code
+
+// macro for dropping value
+#define m_any_nil(a) m_any_nil_()
+
 maysick_any m_any_int(m_int i);
+maysick_any m_any_string(m_string *s);
+maysick_any m_any_bool(bool b);
+maysick_any m_any_nil_();
 
 maysick_any m_any_int(m_int i) {
   maysick_any a;
@@ -122,6 +134,12 @@ maysick_any m_any_bool(bool b) {
   maysick_any a;
   a.type           = M_BOOL;
   a.entity.boolean = b;
+  return a;
+}
+
+maysick_any m_any_nil_() {
+  maysick_any a;
+  a.type = M_NIL;
   return a;
 }
 
@@ -272,6 +290,7 @@ void m_entry();
 int main(int argc, const char **argv) {
   // initialize randomizer
   srand((unsigned)time(NULL));
+
   // jump to the entry point of maysick program.
   m_entry();
 

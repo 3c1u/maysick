@@ -1,5 +1,6 @@
 use crate::codegen::types::*;
 
+#[derive(Clone)]
 pub struct Symbol {
     pub name: String,
     pub arguments: Vec<ObjectType>,
@@ -24,7 +25,7 @@ pub fn mangle(symbol: &Symbol) -> String {
             ObjectType::Integer => "i",
             ObjectType::String => "S",
             ObjectType::Bool => "b",
-            _ => "",
+            _ => "A",
         };
 
         symname.push_str(t);
@@ -36,7 +37,8 @@ pub fn mangle(symbol: &Symbol) -> String {
         ObjectType::Integer => "i",
         ObjectType::String => "S",
         ObjectType::Bool => "b",
-        _ => "",
+        ObjectType::Any => "A",
+        ObjectType::Nil => "",
     });
 
     // add name
