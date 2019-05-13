@@ -537,7 +537,7 @@ impl GlobalCodegen {
         let sym = sym.clone();
 
         // generate code for new symbol
-        if av {
+        if !av {
             if let (Some(im), _) = self.fn_syms.get(f)? {
                 let im = im.clone();
                 self.generate_fn(&sym, &im);
