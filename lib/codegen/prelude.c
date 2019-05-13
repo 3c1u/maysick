@@ -16,10 +16,7 @@ enum {
 typedef struct {
   size_t size;
   size_t len;
-  union {
-    char *     __u8;
-    uintptr_t *__n;
-  } head;
+  char * head;
 } m_string;
 
 #define __aligned(n, a) (n & (~a)) + ((n & a) != 0 ? (a + 1) : 0)
@@ -28,9 +25,9 @@ typedef struct {
 m_string *m_string_with_capacity(size_t size) {
   m_string *str = calloc(1, sizeof(m_string));
 
-  str->len       = 0;
-  str->size      = size < M_INIT_STRSIZE ? M_INIT_STRSIZE : aligned(size, 16);
-  str->head.__u8 = calloc(sizeof(uintptr_t), str->size >> sizeof(uintptr_t));
+  str->len  = 0;
+  str->size = size < M_INIT_STRSIZE ? M_INIT_STRSIZE : aligned(size, 16);
+  str->head = calloc(str->size, 1);
 
   return str;
 }
@@ -42,28 +39,24 @@ m_string *m_string_from_cstr(const char *cstr) {
   m_string *s   = m_string_with_capacity(len);
 
   s->len = len;
-
-  for (size_t i = 0; i < len; i++) {
-    s->head.__u8[i] = cstr[i];
-  }
+  memcpy(s->head, cstr, len);
 
   return s;
 }
 
-void m_string_free(m_string *str) { free(str->head.__u8); }
+void m_string_free(m_string *str) {
+  free(str->head);
+  free(str);
+}
 
 void m_string_expand(m_string *str) {
-  uintptr_t *head_new =
-      calloc(sizeof(uintptr_t), str->size >> (sizeof(uintptr_t) >> 1));
+  char *head_new = calloc(str->size << 1, 1);
 
-  for (size_t i = 0, s = str->size >> (sizeof(uintptr_t)); i < s; ++i) {
-    head_new[i] = str->head.__n[i];
-  }
+  memcpy(head_new, str->head, str->len);
+  free(str->head);
 
-  free(str->head.__u8);
-
-  str->head.__n = head_new;
-  str->size     = str->size << 1;
+  str->head = head_new;
+  str->size = str->size << 1;
 }
 
 void m_string_expand_if_needed(m_string *str) {
@@ -74,14 +67,8 @@ void m_string_expand_if_needed(m_string *str) {
 m_string *m_string_concat(m_string *a, m_string *b) {
   m_string *c = m_string_with_capacity(a->len + b->len);
 
-  for (size_t i = 0, j = 0, s = a->size; i < s; i += sizeof(uintptr_t)) {
-    c->head.__n[j] = a->head.__n[j];
-    j++;
-  }
-
-  for (size_t i = 0, s = b->len, h = a->len; i < s; ++i) {
-    c->head.__u8[i + h] = b->head.__u8[i];
-  }
+  memcpy(c->head, a->head, a->len);
+  memcpy(&c->head[a->len], b->head, b->len);
 
   c->len = a->len + b->len;
 
@@ -152,7 +139,7 @@ m_string *m_to_string(maysick_any a) {
     break;
   case M_INTEGER:
     s = m_string_new();
-    sprintf(s->head.__u8, "%lld", a.entity.integer);
+    sprintf(s->head, "%lld", a.entity.integer);
     return s;
     break;
   case M_BOOL:
@@ -172,7 +159,7 @@ m_int m_to_integer(maysick_any a) {
 
   switch (a.type) {
   case M_STRING:
-    sscanf(a.entity.string->head.__u8, "%d", &i);
+    sscanf(a.entity.string->head, "%d", &i);
     return (m_int)i;
     break;
   case M_INTEGER:
@@ -205,8 +192,8 @@ m_string *_mi_S_integer_as_hex(m_int c);
 
 // implementation of built-in functions
 
-void _mS__print(m_string *msg) { printf("%s", msg->head.__u8); }
-void _mS__println(m_string *msg) { printf("%s\n", msg->head.__u8); }
+void _mS__print(m_string *msg) { printf("%s", msg->head); }
+void _mS__println(m_string *msg) { printf("%s\n", msg->head); }
 
 m_int _m_i_random() { return (m_int)rand(); }
 
@@ -219,14 +206,14 @@ m_string *_m_S_getchar() {
   }
 
   if (c <= 0x7F) {
-    s->head.__u8[0] = c;
-    s->len          = 1;
+    s->head[0] = c;
+    s->len     = 1;
   } else { // might be UTF-8
-    uint32_t cnt    = __builtin_clz((~c) & 0xFF) - 24;
-    s->len          = cnt;
-    s->head.__u8[0] = (char)c;
+    uint32_t cnt = __builtin_clz((~c) & 0xFF) - 24;
+    s->len       = cnt;
+    s->head[0]   = (char)c;
     for (int i = 1; i < cnt; i++) {
-      s->head.__u8[i] = getchar();
+      s->head[i] = getchar();
     }
   }
 
@@ -242,7 +229,7 @@ m_int _m_i_slen(m_string *str) { return (m_int)str->len; }
 
 m_int _mSi_i_char_at(m_string *str, m_int pos) {
   size_t         j = 0;
-  unsigned char *s = str->head.__u8;
+  unsigned char *s = str->head;
 
   for (size_t i = 0; i < pos; i++) {
     char c = s[j];
@@ -271,8 +258,8 @@ m_string *_mi_S_char_from(m_int c) {
   m_string *s = m_string_new();
 
   if (c <= 0x7F) {
-    s->head.__u8[0] = c;
-    s->len          = 1;
+    s->head[0] = c;
+    s->len     = 1;
   }
 
   return s;
@@ -280,7 +267,7 @@ m_string *_mi_S_char_from(m_int c) {
 
 m_string *_mi_S_integer_as_hex(m_int c) {
   m_string *s = m_string_new();
-  sprintf(s->head.__u8, "%X", c);
+  sprintf(s->head, "%X", c);
   return s;
 }
 
