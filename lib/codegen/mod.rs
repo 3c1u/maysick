@@ -502,41 +502,50 @@ impl GlobalCodegen {
 
         code.push_str(") {\n");
         code.push_str(&block.generate().0);
+        code.push_str("return m_any_nil();\n");
         code.push_str("}\n");
 
         self.fn_defs.push_str(&code);
     }
 
-    fn generate_symbol(&mut self, f: &String, a: &Vec<ObjectType>) -> Option<&Symbol> {
+    fn generate_symbol(&mut self, f: &String, a: &Vec<ObjectType>) -> Option<(bool, &Symbol)> {
         let (im, sym) = self.fn_syms.get_mut(f)?;
 
         if let Some(_) = im {
             // register new symbol
-            sym.push(Symbol {
+            let sym_entry = Symbol {
                 name: f.to_owned(),
                 arguments: a.clone(),
                 retval: ObjectType::Any,
                 is_maysick_symbol: true,
-            });
+            };
 
-            Some(&sym[sym.len() - 1])
+            if let Some(idx) = sym.iter().position(|r| r == &sym_entry) {
+                Some((true, &sym[idx]))
+            } else {
+                sym.push(sym_entry);
+                Some((false, &sym[sym.len() - 1]))
+            }
         } else {
-            Some(&sym[0])
+            Some((true, &sym[0]))
         }
     }
 
     pub fn lookup_fn(&mut self, f: &String, a: &Vec<ObjectType>) -> Option<&Symbol> {
         // try to generate symbol
-        let sym = self.generate_symbol(f, a)?.clone();
+        let (av, sym) = self.generate_symbol(f, a)?;
+        let sym = sym.clone();
 
         // generate code for new symbol
-        if let (Some(im), _) = self.fn_syms.get(f)? {
-            let im = im.clone();
-            self.generate_fn(&sym, &im);
+        if av {
+            if let (Some(im), _) = self.fn_syms.get(f)? {
+                let im = im.clone();
+                self.generate_fn(&sym, &im);
+            }
         }
 
         // again, call symbol generator to lookup symbol
-        self.generate_symbol(f, a)
+        self.generate_symbol(f, a).map(|v| v.1)
     }
 }
 
@@ -565,13 +574,10 @@ impl BlockCodegen {
     }
 }
 
-pub fn prelude_export() {
-    println!("{}", include_str!("prelude.c"));
-}
-
-pub fn generate_code(p: Program) {
+pub fn generate_code(p: Program) -> String {
+    let mut res = String::new();
     // export all prelude program
-    prelude_export();
+    res.push_str(include_str!("prelude.c"));
 
     // gen global
     let mut glbl = GlobalCodegen {
@@ -591,6 +597,10 @@ pub fn generate_code(p: Program) {
         stmt.generate(&mut glbl, &mut block);
     }
 
-    println!("{}\n", glbl.generate().0);
-    println!("void m_entry() {{\n{}}}", block.generate().0);
+    res.push_str(&glbl.generate().0);
+    res.push_str("void m_entry() {\n");
+    res.push_str(&block.generate().0);
+    res.push_str("}\n");
+
+    res
 }

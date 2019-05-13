@@ -128,14 +128,13 @@ pub fn run_interpreter(path: &str) {
     }
 }
 
-pub fn compile(path: &str) {
+pub fn compile(path: &str) -> String {
     let p_ = obtain_program(path);
     match p_ {
-        Ok(p) => {
-            codegen::generate_code(p);
-        }
+        Ok(p) => codegen::generate_code(p),
         Err(e) => {
             println!("Error: {}", e);
+            panic!()
         }
     }
 }

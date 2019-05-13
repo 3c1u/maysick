@@ -7,6 +7,10 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef __WATCOMC__
+#define SJIS_MODE
+#endif
+
 typedef int64_t m_int;
 
 enum {
@@ -200,11 +204,24 @@ m_int _m_i_random() { return (m_int)rand(); }
 m_string *_m_S_getchar() {
   m_string *s = m_string_new();
   int       c = getchar();
+  int       i;
 
   if (c == -1) {
     return s; // EOF fallback
   }
 
+#ifdef SJIS_MODE
+  // Watcom C (which may use Shift_JIS)
+  if (c <= 0x7F || (0xA1 <= c && 0xDF <= c)) {
+    s->head[0] = c;
+    s->len     = 1;
+  } else {
+    s->head[0] = c;
+    s->head[1] = getchar();
+    s->len     = 2;
+  }
+#else
+  // gcc or compatible (which uses UTF-8 internally)
   if (c <= 0x7F) {
     s->head[0] = c;
     s->len     = 1;
@@ -212,10 +229,11 @@ m_string *_m_S_getchar() {
     uint32_t cnt = __builtin_clz((~c) & 0xFF) - 24;
     s->len       = cnt;
     s->head[0]   = (char)c;
-    for (int i = 1; i < cnt; i++) {
+    for (i = 1; i < cnt; i++) {
       s->head[i] = getchar();
     }
   }
+#endif
 
   return s;
 }
@@ -225,42 +243,92 @@ m_string *_m_S_readline() {
   return str;
 }
 
-m_int _m_i_slen(m_string *str) { return (m_int)str->len; }
-
-m_int _mSi_i_char_at(m_string *str, m_int pos) {
-  size_t         j = 0;
+m_int _m_i_slen(m_string *str) {
+  size_t         i = 0, j = 0;
   unsigned char *s = str->head;
 
-  for (size_t i = 0; i < pos; i++) {
+  for (i = 0; i < str->len; i++) {
     char c = s[j];
+#ifdef SJIS_MODE
+    if (c <= 0x7F || (0xA1 <= c && 0xDF <= c)) {
+      j++;
+    } else {
+      j += 2;
+    }
+#else
     if (c <= 0x7F)
       j++;
     else {
       j += __builtin_clz((~c) & 0xFF) - 24;
     }
+#endif
   }
 
-  unsigned char c   = s[j];
-  uint32_t      cnt = __builtin_clz((~c) & 0xFF) - 25;
-  uint32_t      ch  = c & (0x3F >> cnt);
+  return j;
+}
+
+m_int _mSi_i_char_at(m_string *str, m_int pos) {
+  size_t         i = 0, j = 0, cnt, ch;
+  unsigned char *s = str->head;
+  unsigned char  c;
+
+  for (i = 0; i < pos; i++) {
+    char c = s[j];
+#ifdef SJIS_MODE
+    if (c <= 0x7F || (0xA1 <= c && 0xDF <= c)) {
+      j++;
+    } else {
+      j += 2;
+    }
+#else
+    if (c <= 0x7F)
+      j++;
+    else {
+      j += __builtin_clz((~c) & 0xFF) - 24;
+    }
+#endif
+  }
+
+#ifdef SJIS_MODE
+  c = s[j];
+  if (c <= 0x7F || (0xA1 <= c && 0xDF <= c)) {
+    ch = c;
+  } else {
+    ch = c | (s[j + 1] << 8);
+  }
+#else
+  c   = s[j];
+  cnt = __builtin_clz((~c) & 0xFF) - 25;
+  ch  = c & (0x3F >> cnt);
 
   if (c <= 0x7F)
     return (m_int)c;
 
-  for (size_t i = 0; i < cnt; i++) {
+  for (i = 0; i < cnt; i++) {
     ch = (ch << 6) | (s[++j] & 0x3F);
   }
+#endif
 
   return (m_int)ch;
 }
 
 m_string *_mi_S_char_from(m_int c) {
   m_string *s = m_string_new();
-
+#ifdef SJIS_MODE
+  if (c <= 0xFF) {
+    s->head[0] = c;
+    s->len     = 1;
+  } else {
+    s->head[0] = c & 0xFF;
+    s->head[1] = c >> 8;
+    s->len     = 2;
+  }
+#else
   if (c <= 0x7F) {
     s->head[0] = c;
     s->len     = 1;
   }
+#endif
 
   return s;
 }

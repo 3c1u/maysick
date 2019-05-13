@@ -3,7 +3,8 @@ extern crate nom;
 
 use clap::{App, Arg, SubCommand};
 
-use std::io::{Error, ErrorKind};
+use encoding_rs::*;
+use std::io::{stdout, Error, ErrorKind, Write};
 
 pub mod ast;
 pub mod codegen;
@@ -61,6 +62,12 @@ pub fn parse_args() -> Result<(), std::io::Error> {
                         .short("e")
                         .long("emit-llvm")
                         .help("Emits an LLVM code"),
+                )
+                .arg(
+                    Arg::with_name("shiftjis")
+                        .short("j")
+                        .long("shift-jis")
+                        .help("Emits in Shift_JIS encoding"),
                 ),
         )
         .get_matches();
@@ -75,8 +82,14 @@ pub fn parse_args() -> Result<(), std::io::Error> {
             .value_of("INPUT")
             .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "Input file is not specified."))?;
         let _bpath = matches.value_of("INPUT").unwrap_or("a.out");
-        let _lflag = matches.occurrences_of("e") > 0;
-        loader::compile(cpath);
+        let sjis = matches.occurrences_of("shiftjis") > 0;
+        let res = loader::compile(cpath);
+        if sjis {
+            let (c, _, _) = SHIFT_JIS.encode(&res);
+            stdout().write_all(&c).unwrap();
+        } else {
+            println!("{}", res);
+        }
     }
 
     Ok(())

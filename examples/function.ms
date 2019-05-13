@@ -2,5 +2,5 @@ fn hello(i) {
   println('Hello, ' + i + '!');
 }
 
-hello('Kaban-chan');
-
+hello('かばんちゃん');
+hello('サーバルちゃん');

@@ -1,6 +1,6 @@
 use crate::codegen::types::*;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Symbol {
     pub name: String,
     pub arguments: Vec<ObjectType>,
