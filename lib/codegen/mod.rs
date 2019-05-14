@@ -15,6 +15,8 @@ pub mod types;
 use symbol::*;
 use types::*;
 
+const VARIABLE_PREFIX: &'static str = "M__";
+
 trait Codegen {
     fn generate(
         &self,
@@ -69,11 +71,16 @@ impl Codegen for Expr {
         match self {
             Expr::Ident(s) => {
                 code.push_str(s);
-                let v = block.variable_defs.get(s);
+
+                let mut i_ = String::new();
+                i_.push_str(VARIABLE_PREFIX);
+                i_.push_str(&s);
+
+                let v = block.variable_defs.get(&i_);
                 return if let Some(v) = v {
-                    (s.clone(), v.1.o_type)
+                    (i_, v.1.o_type)
                 } else {
-                    (s.clone(), ObjectType::Nil)
+                    (i_, ObjectType::Nil)
                 };
             }
             Expr::Literal(l) => match l {
@@ -83,9 +90,9 @@ impl Codegen for Expr {
                     return (code, ObjectType::Integer);
                 }
                 Literal::String(s) => {
-                    code.push_str("m_string_from_cstr(\"");
+                    code.push_str("m_arc_autorelease_s(&arc_local, m_string_from_cstr(\"");
                     code.push_str(&s.escape_debug().to_string());
-                    code.push_str("\")");
+                    code.push_str("\"))");
 
                     return (code, ObjectType::String);
                 }
@@ -142,23 +149,33 @@ impl Codegen for Expr {
 
                 let sym = global.lookup_fn(f, &types).unwrap();
 
-                code.push_str(&mangle(&sym));
-                code.push('(');
+                let mut code_ = String::new();
+
+                code_.push_str(&mangle(&sym));
+                code_.push('(');
 
                 for i in 0..args.len() {
                     if i != 0 {
-                        code.push_str(", ");
+                        code_.push_str(", ");
                     }
                     if types[i] == sym.arguments[i] {
-                        code.push_str(&args[i].0);
+                        code_.push_str(&args[i].0);
                     } else {
-                        code.push_str(&cast_code(&args[i].0, types[i], sym.arguments[i]));
+                        code_.push_str(&cast_code(&args[i].0, types[i], sym.arguments[i]));
                     }
                 }
 
-                code.push(')');
+                code_.push(')');
 
-                return (code, sym.retval);
+                if sym.retval == ObjectType::Nil {
+                    return (code_, sym.retval);
+                }
+
+                code.push_str("m_arc_autorelease(&arc_local, ");
+                code.push_str(&cast_code(&code_, sym.retval, ObjectType::Any));
+                code.push_str(")");
+
+                return (cast_code(&code, ObjectType::Any, sym.retval), sym.retval);
             }
             Expr::If(c, b) => {
                 let c = c.generate(global, block);
@@ -228,12 +245,22 @@ impl Codegen for Stmt {
             }
             Stmt::Let(i, _, e) => {
                 let (c, t) = e.generate(global, block);
-                code.push_str(&i);
+
+                let mut i_ = String::new();
+                i_.push_str(VARIABLE_PREFIX);
+                i_.push_str(&i);
+
+                code.push_str(&i_);
                 code.push_str(" = ");
-                code.push_str(&c);
+
+                let mut arcc = String::new();
+                arcc.push_str("m_arc_autorelease(&arc_local, ");
+                arcc.push_str(&cast_code(&c, t, ObjectType::Any));
+                arcc.push(')');
+                code.push_str(&cast_code(&arcc, ObjectType::Any, t));
                 code.push_str(";\n");
                 block.variable_defs.insert(
-                    i.clone(),
+                    i_,
                     (
                         true,
                         Variable {
@@ -245,17 +272,27 @@ impl Codegen for Stmt {
             }
             Stmt::Var(i, _, e) => {
                 let (c, t) = e.generate(global, block);
-                code.push_str(&i);
+
+                let mut i_ = String::new();
+                i_.push_str(VARIABLE_PREFIX);
+                i_.push_str(&i);
+
+                code.push_str(&i_);
                 code.push_str(" = ");
-                code.push_str(&c);
+
+                let mut arcc = String::new();
+                arcc.push_str("m_arc_autorelease(&arc_local, ");
+                arcc.push_str(&cast_code(&c, t, ObjectType::Any));
+                arcc.push(')');
+                code.push_str(&cast_code(&arcc, ObjectType::Any, t));
                 code.push_str(";\n");
                 block.variable_defs.insert(
-                    i.clone(),
+                    i_,
                     (
                         true,
                         Variable {
                             o_type: t,
-                            immutable: true,
+                            immutable: false,
                         },
                     ),
                 );
@@ -270,12 +307,18 @@ impl Codegen for Stmt {
             }
             Stmt::Return(e) => {
                 if let Some(e) = e {
-                    let (c, _) = e.generate(global, block);
-                    code.push_str("return ");
-                    code.push_str(&c);
+                    let (c, t) = e.generate(global, block);
+                    let mut c_ = String::new();
+                    c_.push_str("m_arc_count(");
+                    c_.push_str(&cast_code(&c, t, ObjectType::Any));
+                    c_.push_str(")");
+
+                    code.push_str("retval = ");
+                    code.push_str(&c_);
                     code.push_str(";\n");
+                    code.push_str("goto DEFER;\n");
                 } else {
-                    code.push_str("return;");
+                    code.push_str("goto DEFER;\n");
                 }
             }
             Stmt::Expr(e) => {
@@ -457,6 +500,11 @@ impl GlobalCodegen {
 
         assert_eq!(args.len(), sym.arguments.len());
 
+        block.proc.push_str("m_arc       *arc_local = NULL;\n");
+        block
+            .proc
+            .push_str("maysick_any  retval    = m_any_nil();\n");
+
         code.push_str(match sym.retval {
             ObjectType::Any => "maysick_any  ",
             ObjectType::Integer => "m_int ",
@@ -481,10 +529,15 @@ impl GlobalCodegen {
                     ObjectType::Bool => "bool ",
                     ObjectType::Nil => "void *",
                 });
-                code.push_str(&args[i]);
+
+                let mut id = String::new();
+                id.push_str(VARIABLE_PREFIX);
+                id.push_str(&args[i]);
+
+                code.push_str(&id);
 
                 block.variable_defs.insert(
-                    args[i].clone(),
+                    id,
                     (
                         false,
                         Variable {
@@ -502,7 +555,9 @@ impl GlobalCodegen {
 
         code.push_str(") {\n");
         code.push_str(&block.generate().0);
-        code.push_str("return m_any_nil();\n");
+        code.push_str("DEFER:\n");
+        code.push_str("m_arc_release(arc_local);\n");
+        code.push_str("return retval;\n");
         code.push_str("}\n");
 
         self.fn_defs.push_str(&code);
@@ -599,6 +654,7 @@ pub fn generate_code(p: Program) -> String {
 
     res.push_str(&glbl.generate().0);
     res.push_str("void m_entry() {\n");
+    res.push_str("m_arc       *arc_local = NULL;\n");
     res.push_str(&block.generate().0);
     res.push_str("}\n");
 

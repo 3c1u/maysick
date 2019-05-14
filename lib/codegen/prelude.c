@@ -8,6 +8,7 @@
 #include <time.h>
 
 #ifdef __WATCOMC__
+// force SJIS mode for OpenWatcom Compiler
 #define SJIS_MODE
 #endif
 
@@ -17,11 +18,55 @@ enum {
   M_INIT_STRSIZE = 0x100,
 };
 
+// primitive types
+
+enum {
+  M_INTEGER,
+  M_STRING,
+  M_BOOL,
+  M_NIL,
+} maysick_type;
+
 typedef struct {
   size_t size;
   size_t len;
   char * head;
 } m_string;
+
+typedef struct {
+  uint16_t type;
+  union {
+    m_int     integer;
+    m_string *string;
+    bool      boolean;
+  } entity;
+} maysick_any;
+
+// macro for dropping value
+#define m_any_nil(a) m_any_nil_()
+
+maysick_any m_any_int(m_int i);
+maysick_any m_any_string(m_string *s);
+maysick_any m_any_bool(bool b);
+maysick_any m_any_nil_();
+
+typedef struct m_arc {
+  size_t        count;
+  maysick_any   obj;
+  struct m_arc *prev;
+  struct m_arc *next;
+} m_arc;
+
+m_arc *GLOBAL_ARC = NULL;
+
+m_arc *     m_arc_new(maysick_any obj);
+maysick_any m_arc_count(maysick_any obj);
+m_string *  m_arc_count_s(m_string *s);
+maysick_any m_arc_detach(maysick_any obj);
+void        m_arc_detach_all();
+maysick_any m_arc_move(maysick_any obj);
+maysick_any m_arc_autorelease(m_arc **arc, maysick_any obj);
+m_string *  m_arc_autorelease_s(m_arc **arc, m_string *str);
 
 #define __aligned(n, a) (n & (~a)) + ((n & a) != 0 ? (a + 1) : 0)
 #define aligned(n, align) (__aligned((n), (align - 1)))
@@ -32,6 +77,9 @@ m_string *m_string_with_capacity(size_t size) {
   str->len  = 0;
   str->size = size < M_INIT_STRSIZE ? M_INIT_STRSIZE : aligned(size, 16);
   str->head = calloc(str->size, 1);
+
+  // count string
+  m_arc_count_s(str);
 
   return str;
 }
@@ -45,6 +93,7 @@ m_string *m_string_from_cstr(const char *cstr) {
   s->len = len;
   memcpy(s->head, cstr, len);
 
+  m_arc_move(m_any_string(s));
   return s;
 }
 
@@ -79,33 +128,7 @@ m_string *m_string_concat(m_string *a, m_string *b) {
   return c;
 }
 
-// primitive types
-
-typedef struct {
-  uint16_t type;
-  union {
-    m_int     integer;
-    m_string *string;
-    bool      boolean;
-  } entity;
-} maysick_any;
-
-enum {
-  M_INTEGER,
-  M_STRING,
-  M_BOOL,
-  M_NIL,
-} maysick_type;
-
 // type-cast for compiler-generated code
-
-// macro for dropping value
-#define m_any_nil(a) m_any_nil_()
-
-maysick_any m_any_int(m_int i);
-maysick_any m_any_string(m_string *s);
-maysick_any m_any_bool(bool b);
-maysick_any m_any_nil_();
 
 maysick_any m_any_int(m_int i) {
   maysick_any a;
@@ -181,6 +204,145 @@ m_int m_to_integer(maysick_any a) {
   }
 }
 
+// auto reference counter
+
+m_arc *m_arc_new(maysick_any obj) {
+  m_arc *arc = calloc(1, sizeof(m_arc));
+  arc->obj   = obj;
+  arc->count = 1;
+  return arc;
+}
+
+m_arc *m_arc_find(maysick_any obj, m_arc *arc) {
+  if (obj.type != M_STRING)
+    return NULL;
+
+  if (!arc)
+    return NULL;
+
+  if (obj.entity.string == arc->obj.entity.string) {
+    return arc;
+  }
+
+  return m_arc_find(obj, arc->next);
+}
+
+maysick_any m_arc_count(maysick_any obj) {
+  if (obj.type != M_STRING)
+    return obj;
+
+  m_arc *a = m_arc_find(obj, GLOBAL_ARC);
+
+  if (!a) {
+    m_arc *b = m_arc_new(obj);
+    b->prev  = NULL;
+    b->next  = GLOBAL_ARC;
+    if (GLOBAL_ARC) {
+      GLOBAL_ARC->prev = b;
+    }
+    GLOBAL_ARC = b;
+    return obj;
+  }
+
+  a->count++;
+  return obj;
+}
+
+m_string *m_arc_count_s(m_string *s) {
+  m_arc_count(m_any_string(s));
+  return s;
+}
+
+maysick_any m_arc_move(maysick_any obj) {
+  if (obj.type != M_STRING)
+    return obj;
+
+  m_arc *a = m_arc_find(obj, GLOBAL_ARC);
+
+  if (!a)
+    return obj;
+
+  a->count--;
+
+  return obj;
+}
+
+maysick_any m_arc_detach(maysick_any obj) {
+  if (obj.type != M_STRING)
+    return obj;
+
+  m_arc *a = m_arc_find(obj, GLOBAL_ARC);
+
+  if (!a)
+    return obj;
+
+  a->count--;
+
+  if (a->count == 0) {
+    // purge from list
+    if (a->prev) {
+      a->prev->next = a->next;
+      a->next->prev = a->prev;
+      m_string_free(a->obj.entity.string);
+      free(a);
+    } else {
+      GLOBAL_ARC = a->next;
+      m_string_free(a->obj.entity.string);
+      free(a);
+    }
+  }
+
+  return m_any_nil();
+}
+
+void m_arc_detach_all() {
+  while (GLOBAL_ARC) {
+    m_arc *a   = GLOBAL_ARC;
+    GLOBAL_ARC = a->next;
+    m_string_free(a->obj.entity.string);
+    free(a);
+  }
+}
+
+maysick_any m_arc_autorelease(m_arc **arc, maysick_any obj) {
+  if (obj.type != M_STRING)
+    return obj;
+
+  m_arc_count(obj);
+
+  // m_arc_count(obj);
+  m_arc *a = m_arc_find(obj, *arc);
+
+  if (!a) {
+    m_arc *b = m_arc_new(obj);
+    b->prev  = NULL;
+    b->next  = *arc;
+    if (b->next) {
+      b->next->prev = b;
+    }
+    *arc = b;
+    return obj;
+  }
+
+  a->count++;
+
+  return obj;
+}
+
+m_string *m_arc_autorelease_s(m_arc **arc, m_string *s) {
+  m_arc_autorelease(arc, m_any_string(s));
+  return s;
+}
+
+void m_arc_release(m_arc *arc) {
+  while (arc) {
+    m_arc *a = arc;
+    arc      = a->next;
+    m_arc_detach(a->obj);
+    free(a);
+  }
+}
+
 // prototype of built-in functions
 
 void      _mS__print(m_string *msg);
@@ -207,6 +369,7 @@ m_string *_m_S_getchar() {
   int       i;
 
   if (c == -1) {
+    m_arc_move(m_any_string(s));
     return s; // EOF fallback
   }
 
@@ -235,11 +398,14 @@ m_string *_m_S_getchar() {
   }
 #endif
 
+  m_arc_move(m_any_string(s));
   return s;
 }
 
 m_string *_m_S_readline() {
   m_string *str = m_string_new();
+
+  m_arc_move(m_any_string(str));
   return str;
 }
 
@@ -348,12 +514,15 @@ m_string *_mi_S_char_from(m_int c) {
   }
 #endif
 
+  m_arc_move(m_any_string(s));
   return s;
 }
 
 m_string *_mi_S_integer_as_hex(m_int c) {
   m_string *s = m_string_new();
   sprintf(s->head, "%X", c);
+
+  m_arc_move(m_any_string(s));
   return s;
 }
 
@@ -366,6 +535,9 @@ int main(int argc, const char **argv) {
 
   // jump to the entry point of maysick program.
   m_entry();
+
+  // free all objects
+  m_arc_detach_all();
 
   return 0;
 }

@@ -1,6 +1,11 @@
-fn hello(i) {
-  println('Hello, ' + i + '!');
+fn chan(s) {
+  let s2 = s + 'ちゃん';
+  return s2;
 }
 
-hello('かばんちゃん');
-hello('サーバルちゃん');
+fn hello(i) {
+  println(chan(i) + 'はすっごーいんだよ!');
+}
+
+hello('かばん');
+hello('カラカル');
