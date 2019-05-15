@@ -228,10 +228,12 @@ m_arc *m_arc_find(maysick_any obj, m_arc *arc) {
 }
 
 maysick_any m_arc_count(maysick_any obj) {
+  m_arc *a;
+
   if (obj.type != M_STRING)
     return obj;
 
-  m_arc *a = m_arc_find(obj, GLOBAL_ARC);
+  a = m_arc_find(obj, GLOBAL_ARC);
 
   if (!a) {
     m_arc *b = m_arc_new(obj);
@@ -254,10 +256,12 @@ m_string *m_arc_count_s(m_string *s) {
 }
 
 maysick_any m_arc_move(maysick_any obj) {
+  m_arc *a;
+
   if (obj.type != M_STRING)
     return obj;
 
-  m_arc *a = m_arc_find(obj, GLOBAL_ARC);
+  a = m_arc_find(obj, GLOBAL_ARC);
 
   if (!a)
     return obj;
@@ -268,10 +272,12 @@ maysick_any m_arc_move(maysick_any obj) {
 }
 
 maysick_any m_arc_detach(maysick_any obj) {
+  m_arc *a;
+
   if (obj.type != M_STRING)
     return obj;
 
-  m_arc *a = m_arc_find(obj, GLOBAL_ARC);
+  a = m_arc_find(obj, GLOBAL_ARC);
 
   if (!a)
     return obj;
@@ -305,13 +311,15 @@ void m_arc_detach_all() {
 }
 
 maysick_any m_arc_autorelease(m_arc **arc, maysick_any obj) {
+  m_arc *a;
+
   if (obj.type != M_STRING)
     return obj;
 
   m_arc_count(obj);
 
   // m_arc_count(obj);
-  m_arc *a = m_arc_find(obj, *arc);
+  a = m_arc_find(obj, *arc);
 
   if (!a) {
     m_arc *b = m_arc_new(obj);
