@@ -506,19 +506,19 @@ m_string *_mi_S_char_from(m_int c) {
 
   if (c <= 0x07FF) {
     s->len     = 2;
-    s->head[0] = 0b11000000 | (c >> 6);
-    s->head[1] = 0b10000000 | (c & 0b00111111);
+    s->head[0] = 0xC0 | (c >> 6);
+    s->head[1] = 0x80 | (c & 0x3F);
   } else if (c <= 0xFFFF) {
     s->len     = 3;
-    s->head[0] = 0b11100000 | (c >> 12);
-    s->head[1] = 0b10000000 | ((c >> 6) & 0b00111111);
-    s->head[2] = 0b10000000 | (c & 0b00111111);
+    s->head[0] = 0xE0 | (c >> 12);
+    s->head[1] = 0x80 | ((c >> 6) & 0x3F);
+    s->head[2] = 0x80 | (c & 0x3F);
   } else if (c <= 0x1FFFFF) {
     s->len     = 4;
-    s->head[0] = 0b11110000 | (c >> 18);
-    s->head[1] = 0b10000000 | ((c >> 12) & 0b00111111);
-    s->head[2] = 0b10000000 | ((c >> 6) & 0b00111111);
-    s->head[3] = 0b10000000 | (c & 0b00111111);
+    s->head[0] = 0xF0 | (c >> 18);
+    s->head[1] = 0x80 | ((c >> 12) & 0x3F);
+    s->head[2] = 0x80 | ((c >> 6) & 0x3F);
+    s->head[3] = 0x80 | (c & 0x3F);
   }
 #endif
 
