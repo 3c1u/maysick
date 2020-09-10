@@ -7,8 +7,16 @@
 use crate::ast::*;
 use crate::token::*;
 
-use crate::grammar::maysicklexer::MaysickLexer;
-use crate::grammar::maysickparser::MaysickParser;
+use crate::grammar::maysicklexer as lex;
+use crate::grammar::maysickparser as par;
+
+use lex::MaysickLexer;
+use par::MaysickParser;
+
+use antlr_rust::common_token_stream::CommonTokenStream;
+use antlr_rust::input_stream::InputStream;
+use antlr_rust::token::{Token as AntlrToken, TOKEN_EOF};
+use antlr_rust::token_source::TokenSource;
 
 pub fn token_maysick_line(input: &str) -> Result<Vec<Token>, ()> {
     todo!()
@@ -26,9 +34,46 @@ pub fn parse_program(tokens: &[Token]) -> Result<Program, ()> {
     todo!()
 }
 
+pub fn full_parse_program(input: &str) -> Result<Program, ()> {
+    let lexer = MaysickLexer::new(Box::new(InputStream::new(input.into())));
+    let token_source = CommonTokenStream::new(lexer);
+    let mut parser = MaysickParser::new(Box::new(token_source));
+    todo!()
+}
+
 #[cfg(test)]
-mod test {
-    use crate::parser::*;
+mod test_lexer {
+    use super::*;
+
+    #[test]
+    fn t_lexer() {
+        let input = r#"fn kani(s) {
+            let s2 = s + 'かに';
+            return s2;
+        }
+        println(kani('とー'));"#;
+
+        let mut lexer = MaysickLexer::new(Box::new(InputStream::new(input.into())));
+
+        loop {
+            let tok = lexer.next_token();
+            if tok.get_token_type() == TOKEN_EOF {
+                break;
+            }
+
+            if tok.get_token_type() == lex::WS {
+                continue;
+            }
+
+            let tok = AttributedToken::new(&tok);
+            println!("{:#?}", tok);
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_parser {
+    use super::*;
 
     #[test]
     fn t_expr_fncall() {

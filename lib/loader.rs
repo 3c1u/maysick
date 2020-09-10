@@ -87,8 +87,7 @@ fn obtain_program(path: &str) -> Result<Program, Error> {
 
     if is_dir && exists {
         let tokens = get_token_from_directory(&pbuf).unwrap();
-        parse_program(&tokens)
-            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
+        parse_program(&tokens).map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
     } else if !file_exists {
         // 存在しないとき
         Err(Error::new(
@@ -107,8 +106,7 @@ fn obtain_program(path: &str) -> Result<Program, Error> {
 
         let tokens = token_line(&contents).unwrap();
 
-        parse_program(&tokens)
-            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
+        parse_program(&tokens).map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
     }
 }
 

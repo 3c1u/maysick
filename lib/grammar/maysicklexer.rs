@@ -4,114 +4,179 @@
 #![allow(non_upper_case_globals)]
 #![allow(unused_imports)]
 use antlr_rust::atn::ATN;
-use antlr_rust::char_stream::CharStream;
-use antlr_rust::lexer::{BaseLexer, Lexer, LexerRecog};
 use antlr_rust::atn_deserializer::ATNDeserializer;
-use antlr_rust::dfa::DFA;
-use antlr_rust::lexer_atn_simulator::{LexerATNSimulator, ILexerATNSimulator};
-use antlr_rust::PredictionContextCache;
-use antlr_rust::recognizer::{Recognizer,Actions};
-use antlr_rust::error_listener::ErrorListener;
-use antlr_rust::token_source::TokenSource;
+use antlr_rust::char_stream::CharStream;
 use antlr_rust::common_token_factory::TokenFactory;
-use antlr_rust::token::*;
+use antlr_rust::dfa::DFA;
+use antlr_rust::error_listener::ErrorListener;
+use antlr_rust::lexer::{BaseLexer, Lexer, LexerRecog};
+use antlr_rust::lexer_atn_simulator::{ILexerATNSimulator, LexerATNSimulator};
+use antlr_rust::parser_rule_context::{cast, LexerContext, ParserRuleContext};
+use antlr_rust::recognizer::{Actions, Recognizer};
 use antlr_rust::rule_context::BaseRuleContext;
-use antlr_rust::parser_rule_context::{ParserRuleContext,LexerContext,cast};
-use antlr_rust::vocabulary::{Vocabulary,VocabularyImpl};
+use antlr_rust::token::*;
+use antlr_rust::token_source::TokenSource;
+use antlr_rust::vocabulary::{Vocabulary, VocabularyImpl};
+use antlr_rust::PredictionContextCache;
 
-use std::sync::Arc;
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
+use std::sync::Arc;
 
+pub const IF: isize = 1;
+pub const ELSE: isize = 2;
+pub const WHILE: isize = 3;
+pub const FN: isize = 4;
+pub const LET: isize = 5;
+pub const VAR: isize = 6;
+pub const RETURN: isize = 7;
+pub const IMPORT: isize = 8;
+pub const SYM_LPAREN: isize = 9;
+pub const SYM_RPAREN: isize = 10;
+pub const SYM_LBOX: isize = 11;
+pub const SYM_RBOX: isize = 12;
+pub const SYM_LCURLY: isize = 13;
+pub const SYM_RCURLY: isize = 14;
+pub const SYM_EQ: isize = 15;
+pub const SYM_CMPEQ: isize = 16;
+pub const SYM_MOD: isize = 17;
+pub const SYM_AND: isize = 18;
+pub const SYM_OR: isize = 19;
+pub const SYM_DIV: isize = 20;
+pub const SYM_MUL: isize = 21;
+pub const SYM_ADD: isize = 22;
+pub const SYM_SUB: isize = 23;
+pub const SYM_DOUBLECOLON: isize = 24;
+pub const SYM_SEMICOLON: isize = 25;
+pub const IDENT: isize = 26;
+pub const LIT_STRING: isize = 27;
+pub const LIT_NUMBER: isize = 28;
+pub const WS: isize = 29;
+pub const channelNames: [&'static str; 0 + 2] = ["DEFAULT_TOKEN_CHANNEL", "HIDDEN"];
 
-		pub const IF:isize=1; 
-		pub const ELSE:isize=2; 
-		pub const WHILE:isize=3; 
-		pub const FN:isize=4; 
-		pub const LET:isize=5; 
-		pub const VAR:isize=6; 
-		pub const RETURN:isize=7; 
-		pub const IMPORT:isize=8; 
-		pub const SYM_LPAREN:isize=9; 
-		pub const SYM_RPAREN:isize=10; 
-		pub const SYM_LBOX:isize=11; 
-		pub const SYM_RBOX:isize=12; 
-		pub const SYM_LCURLY:isize=13; 
-		pub const SYM_RCURLY:isize=14; 
-		pub const SYM_EQ:isize=15; 
-		pub const SYM_CMPEQ:isize=16; 
-		pub const SYM_MOD:isize=17; 
-		pub const SYM_AND:isize=18; 
-		pub const SYM_OR:isize=19; 
-		pub const SYM_DIV:isize=20; 
-		pub const SYM_MUL:isize=21; 
-		pub const SYM_ADD:isize=22; 
-		pub const SYM_SUB:isize=23; 
-		pub const SYM_DOUBLECOLON:isize=24; 
-		pub const SYM_SEMICOLON:isize=25; 
-		pub const IDENT:isize=26; 
-		pub const LIT_STRING:isize=27; 
-		pub const LIT_NUMBER:isize=28; 
-		pub const WS:isize=29;
-	pub const channelNames: [&'static str;0+2] = [
-		"DEFAULT_TOKEN_CHANNEL", "HIDDEN"
-	];
+pub const modeNames: [&'static str; 1] = ["DEFAULT_MODE"];
 
-	pub const modeNames: [&'static str;1] = [
-		"DEFAULT_MODE"
-	];
+pub const ruleNames: [&'static str; 29] = [
+    "IF",
+    "ELSE",
+    "WHILE",
+    "FN",
+    "LET",
+    "VAR",
+    "RETURN",
+    "IMPORT",
+    "SYM_LPAREN",
+    "SYM_RPAREN",
+    "SYM_LBOX",
+    "SYM_RBOX",
+    "SYM_LCURLY",
+    "SYM_RCURLY",
+    "SYM_EQ",
+    "SYM_CMPEQ",
+    "SYM_MOD",
+    "SYM_AND",
+    "SYM_OR",
+    "SYM_DIV",
+    "SYM_MUL",
+    "SYM_ADD",
+    "SYM_SUB",
+    "SYM_DOUBLECOLON",
+    "SYM_SEMICOLON",
+    "IDENT",
+    "LIT_STRING",
+    "LIT_NUMBER",
+    "WS",
+];
 
-	pub const ruleNames: [&'static str;29] = [
-		"IF", "ELSE", "WHILE", "FN", "LET", "VAR", "RETURN", "IMPORT", "SYM_LPAREN", 
-		"SYM_RPAREN", "SYM_LBOX", "SYM_RBOX", "SYM_LCURLY", "SYM_RCURLY", "SYM_EQ", 
-		"SYM_CMPEQ", "SYM_MOD", "SYM_AND", "SYM_OR", "SYM_DIV", "SYM_MUL", "SYM_ADD", 
-		"SYM_SUB", "SYM_DOUBLECOLON", "SYM_SEMICOLON", "IDENT", "LIT_STRING", 
-		"LIT_NUMBER", "WS"
-	];
-
-
-	pub const _LITERAL_NAMES: [Option<&'static str>;26] = [
-		None, Some("'if'"), Some("'else'"), Some("'while'"), Some("'fn'"), Some("'let'"), 
-		Some("'var'"), Some("'return'"), Some("'import'"), Some("'('"), Some("')'"), 
-		Some("'['"), Some("']'"), Some("'{'"), Some("'}'"), Some("'='"), Some("'=='"), 
-		None, None, None, None, None, Some("'+'"), Some("'-'"), Some("'::'"), 
-		Some("';'")
-	];
-	pub const _SYMBOLIC_NAMES: [Option<&'static str>;30]  = [
-		None, Some("IF"), Some("ELSE"), Some("WHILE"), Some("FN"), Some("LET"), 
-		Some("VAR"), Some("RETURN"), Some("IMPORT"), Some("SYM_LPAREN"), Some("SYM_RPAREN"), 
-		Some("SYM_LBOX"), Some("SYM_RBOX"), Some("SYM_LCURLY"), Some("SYM_RCURLY"), 
-		Some("SYM_EQ"), Some("SYM_CMPEQ"), Some("SYM_MOD"), Some("SYM_AND"), Some("SYM_OR"), 
-		Some("SYM_DIV"), Some("SYM_MUL"), Some("SYM_ADD"), Some("SYM_SUB"), Some("SYM_DOUBLECOLON"), 
-		Some("SYM_SEMICOLON"), Some("IDENT"), Some("LIT_STRING"), Some("LIT_NUMBER"), 
-		Some("WS")
-	];
-	lazy_static!{
-	    static ref _shared_context_cache: Arc<PredictionContextCache> = Arc::new(PredictionContextCache::new());
-		static ref VOCABULARY: Box<dyn Vocabulary> = Box::new(VocabularyImpl::new(_LITERAL_NAMES.iter(), _SYMBOLIC_NAMES.iter(), None));
-	}
-
+pub const _LITERAL_NAMES: [Option<&'static str>; 26] = [
+    None,
+    Some("'if'"),
+    Some("'else'"),
+    Some("'while'"),
+    Some("'fn'"),
+    Some("'let'"),
+    Some("'var'"),
+    Some("'return'"),
+    Some("'import'"),
+    Some("'('"),
+    Some("')'"),
+    Some("'['"),
+    Some("']'"),
+    Some("'{'"),
+    Some("'}'"),
+    Some("'='"),
+    Some("'=='"),
+    None,
+    None,
+    None,
+    None,
+    None,
+    Some("'+'"),
+    Some("'-'"),
+    Some("'::'"),
+    Some("';'"),
+];
+pub const _SYMBOLIC_NAMES: [Option<&'static str>; 30] = [
+    None,
+    Some("IF"),
+    Some("ELSE"),
+    Some("WHILE"),
+    Some("FN"),
+    Some("LET"),
+    Some("VAR"),
+    Some("RETURN"),
+    Some("IMPORT"),
+    Some("SYM_LPAREN"),
+    Some("SYM_RPAREN"),
+    Some("SYM_LBOX"),
+    Some("SYM_RBOX"),
+    Some("SYM_LCURLY"),
+    Some("SYM_RCURLY"),
+    Some("SYM_EQ"),
+    Some("SYM_CMPEQ"),
+    Some("SYM_MOD"),
+    Some("SYM_AND"),
+    Some("SYM_OR"),
+    Some("SYM_DIV"),
+    Some("SYM_MUL"),
+    Some("SYM_ADD"),
+    Some("SYM_SUB"),
+    Some("SYM_DOUBLECOLON"),
+    Some("SYM_SEMICOLON"),
+    Some("IDENT"),
+    Some("LIT_STRING"),
+    Some("LIT_NUMBER"),
+    Some("WS"),
+];
+lazy_static! {
+    static ref _shared_context_cache: Arc<PredictionContextCache> =
+        Arc::new(PredictionContextCache::new());
+    static ref VOCABULARY: Box<dyn Vocabulary> = Box::new(VocabularyImpl::new(
+        _LITERAL_NAMES.iter(),
+        _SYMBOLIC_NAMES.iter(),
+        None
+    ));
+}
 
 pub struct MaysickLexer {
-	base: BaseLexer<MaysickLexerActions>,
-//	static { RuntimeMetaData.checkVersion("4.8", RuntimeMetaData.VERSION); }
+    base: BaseLexer<MaysickLexerActions>,
+    //	static { RuntimeMetaData.checkVersion("4.8", RuntimeMetaData.VERSION); }
 }
 
-impl Deref for MaysickLexer{
-	type Target = BaseLexer<MaysickLexerActions>;
+impl Deref for MaysickLexer {
+    type Target = BaseLexer<MaysickLexerActions>;
 
-	fn deref(&self) -> &Self::Target {
-		&self.base
-	}
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
 }
 
-impl DerefMut for MaysickLexer{
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.base
-	}
+impl DerefMut for MaysickLexer {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
 }
-
 
 impl MaysickLexer {
     fn get_rule_names(&self) -> &'static [&'static str] {
@@ -137,40 +202,35 @@ impl MaysickLexer {
         "MaysickLexer.g4"
     }
 
-	pub fn new (input: Box<dyn CharStream>) -> Self {
-		antlr_rust::recognizer::check_version("0","1");
-    	Self {
-			base: BaseLexer::new_base_lexer(
-				input,
-				LexerATNSimulator::new_lexer_atnsimulator(
-					_ATN.clone(),
-					_decision_to_DFA.clone(),
-					_shared_context_cache.clone(),
-				),
-				Box::new(MaysickLexerActions{})
-			)
-	    }
-	}
+    pub fn new(input: Box<dyn CharStream>) -> Self {
+        antlr_rust::recognizer::check_version("0", "1");
+        Self {
+            base: BaseLexer::new_base_lexer(
+                input,
+                LexerATNSimulator::new_lexer_atnsimulator(
+                    _ATN.clone(),
+                    _decision_to_DFA.clone(),
+                    _shared_context_cache.clone(),
+                ),
+                Box::new(MaysickLexerActions {}),
+            ),
+        }
+    }
 }
 
-pub struct MaysickLexerActions {
-}
+pub struct MaysickLexerActions {}
 
-impl MaysickLexerActions{
-}
+impl MaysickLexerActions {}
 
-impl LexerRecog for MaysickLexerActions{
-}
+impl LexerRecog for MaysickLexerActions {}
 
 impl Recognizer for MaysickLexerActions {}
 
-impl Actions for MaysickLexerActions{
-	type Recog = BaseLexer<MaysickLexerActions>;
-	}
-
-	impl MaysickLexerActions{
-
+impl Actions for MaysickLexerActions {
+    type Recog = BaseLexer<MaysickLexerActions>;
 }
+
+impl MaysickLexerActions {}
 
 impl TokenSource for MaysickLexer {
     fn next_token(&mut self) -> Box<dyn Token> {
@@ -189,38 +249,34 @@ impl TokenSource for MaysickLexer {
         self.base.get_input_stream()
     }
 
-	fn get_source_name(&self) -> String {
-		self.base.get_source_name()
-	}
+    fn get_source_name(&self) -> String {
+        self.base.get_source_name()
+    }
 
     fn get_token_factory(&self) -> &dyn TokenFactory {
         self.base.get_token_factory()
     }
 }
 
+lazy_static! {
+    static ref _ATN: Arc<ATN> =
+        Arc::new(ATNDeserializer::new(None).deserialize(_serializedATN.chars()));
+    static ref _decision_to_DFA: Arc<Vec<DFA>> = {
+        let mut dfa = Vec::new();
+        let size = _ATN.decision_to_state.len();
+        for i in 0..size {
+            dfa.push(DFA::new(
+                _ATN.clone(),
+                _ATN.get_decision_state(i),
+                i as isize,
+            ))
+        }
+        Arc::new(dfa)
+    };
+}
 
-
-	lazy_static! {
-	    static ref _ATN: Arc<ATN> =
-	        Arc::new(ATNDeserializer::new(None).deserialize(_serializedATN.chars()));
-	    static ref _decision_to_DFA: Arc<Vec<DFA>> = {
-	        let mut dfa = Vec::new();
-	        let size = _ATN.decision_to_state.len();
-	        for i in 0..size {
-	            dfa.push(DFA::new(
-	                _ATN.clone(),
-	                _ATN.get_decision_state(i),
-	                i as isize,
-	            ))
-	        }
-	        Arc::new(dfa)
-	    };
-	}
-
-
-
-	const _serializedATN:&'static str =
-		"\x03\u{608b}\u{a72a}\u{8133}\u{b9ed}\u{417c}\u{3be7}\u{7786}\u{5964}\x02\
+const _serializedATN: &'static str =
+    "\x03\u{608b}\u{a72a}\u{8133}\u{b9ed}\u{417c}\u{3be7}\u{7786}\u{5964}\x02\
 		\x1f\u{ed}\x08\x01\x04\x02\x09\x02\x04\x03\x09\x03\x04\x04\x09\x04\x04\
 		\x05\x09\x05\x04\x06\x09\x06\x04\x07\x09\x07\x04\x08\x09\x08\x04\x09\x09\
 		\x09\x04\x0a\x09\x0a\x04\x0b\x09\x0b\x04\x0c\x09\x0c\x04\x0d\x09\x0d\x04\
@@ -787,4 +843,3 @@ impl TokenSource for MaysickLexer {
 		\u{ea}\u{eb}\x03\x02\x02\x02\u{eb}\u{ec}\x08\x1e\x02\x02\u{ec}\x3c\x03\
 		\x02\x02\x02\x14\x02\x7b\u{83}\u{8a}\u{92}\u{9a}\u{a9}\u{b2}\u{b4}\u{be}\
 		\u{c0}\u{c4}\u{ca}\u{d3}\u{db}\u{e1}\u{e4}\u{e9}\x03\x02\x03\x02";
-
