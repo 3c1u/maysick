@@ -7,6 +7,9 @@
 use crate::ast::*;
 use crate::token::*;
 
+use crate::grammar::maysicklexer::MaysickLexer;
+use crate::grammar::maysickparser::MaysickParser;
+
 pub fn token_maysick_line(input: &str) -> Result<Vec<Token>, ()> {
     todo!()
 }
@@ -30,22 +33,22 @@ mod test {
     #[test]
     fn t_expr_fncall() {
         let tokens = vec![
-            Token::Ident("nomay".to_string()),
+            Token::Ident("senko".to_string()),
             Token::LParen,
             Token::RParen,
         ];
         assert_eq!(
             parse_expr(&tokens),
-            Ok(Expr::FnCall("nomay".to_string(), vec!()))
+            Ok(Expr::FnCall("senko".to_string(), vec!()))
         );
     }
 
     #[test]
     fn t_expr_literal_str() {
-        let tokens = vec![Token::String("nomay".to_string())];
+        let tokens = vec![Token::String("senko".to_string())];
         assert_eq!(
             parse_expr(&tokens),
-            Ok(Expr::Literal(Literal::String("nomay".to_string())))
+            Ok(Expr::Literal(Literal::String("senko".to_string())))
         );
     }
 
@@ -200,13 +203,13 @@ mod test {
     fn t_stmt_fndef() {
         let tokens = vec![
             Token::KFn,
-            Token::Ident("nomay".to_string()),
+            Token::Ident("senko".to_string()),
             Token::LParen,
             Token::RParen,
             Token::LBlock,
             Token::RBlock,
         ];
-        let res = vec![Stmt::FnDef("nomay".to_string(), vec![], vec![])];
+        let res = vec![Stmt::FnDef("senko".to_string(), vec![], vec![])];
 
         if let Ok(pres) = parse_program(&tokens) {
             assert_eq!(pres, res);
@@ -219,13 +222,13 @@ mod test {
     fn t_stmt_let() {
         let tokens = vec![
             Token::KLet,
-            Token::Ident("nomay".to_string()),
+            Token::Ident("senko".to_string()),
             Token::EqualOp,
             Token::Integer(1123),
             Token::EndLine,
         ];
         let res = vec![Stmt::Let(
-            "nomay".to_string(),
+            "senko".to_string(),
             None,
             Expr::Literal(Literal::Integer(1123)),
         )];
@@ -241,13 +244,13 @@ mod test {
     fn t_stmt_var() {
         let tokens = vec![
             Token::KVar,
-            Token::Ident("nomay".to_string()),
+            Token::Ident("senko".to_string()),
             Token::EqualOp,
             Token::Integer(1123),
             Token::EndLine,
         ];
         let res = vec![Stmt::Var(
-            "nomay".to_string(),
+            "senko".to_string(),
             None,
             Expr::Literal(Literal::Integer(1123)),
         )];

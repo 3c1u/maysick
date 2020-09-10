@@ -13,9 +13,10 @@ pub mod codegen;
 pub mod eval;
 pub mod loader;
 pub mod parser;
-pub mod grammar;
 pub mod prelude;
 pub mod token;
+
+pub(crate) mod grammar;
 
 /**
  * Parse arguments as a maysick interpreter.
