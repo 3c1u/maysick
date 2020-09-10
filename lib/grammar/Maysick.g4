@@ -1,4 +1,4 @@
-grammar maysick;
+grammar Maysick;
 
 prog
     : (stmt)* EOF

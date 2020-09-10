@@ -1,3 +1,8 @@
+#![feature(try_blocks)]
+
+#[macro_use]
+extern crate lazy_static;
+
 use clap::{App, Arg, SubCommand};
 
 use encoding_rs::*;
@@ -8,6 +13,7 @@ pub mod codegen;
 pub mod eval;
 pub mod loader;
 pub mod parser;
+pub mod grammar;
 pub mod prelude;
 pub mod token;
 
