@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate nom;
-
 use clap::{App, Arg, SubCommand};
 
 use encoding_rs::*;

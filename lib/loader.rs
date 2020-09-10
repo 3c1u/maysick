@@ -4,7 +4,6 @@
  * 2018 - murueka
  */
 
-use nom::types::CompleteStr;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::io::{Error, ErrorKind};

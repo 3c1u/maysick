@@ -5,14 +5,7 @@
  */
 
 use crate::token::*;
-use nom::types::CompleteStr;
 
-// Eof parser
-named!(token_eof<CompleteStr, Token>,
-       map!(eof!(), |_| Token::Eof)
-);
-
-// Identifier parser
 fn check_ident(oc: Option<char>, contains_number: bool) -> bool {
     match oc {
         None => false,
@@ -25,11 +18,7 @@ fn check_ident(oc: Option<char>, contains_number: bool) -> bool {
         }
     }
 }
-fn gen_token(c: CompleteStr, l: CompleteStr) -> String {
-    let mut s = c.0.to_owned();
-    s.push_str(l.0);
-    s
-}
+
 fn parse_reserved_keyword(s: &str) -> Option<Token> {
     match s {
         "fn" => Some(Token::KFn),
@@ -43,130 +32,6 @@ fn parse_reserved_keyword(s: &str) -> Option<Token> {
         _ => None,
     }
 }
-named!(token_ident_str<CompleteStr, String>,
-       do_parse!(
-           c: verify!(take!(1), |r: CompleteStr| check_ident(r.chars().nth(0), false)) >>
-           l: take_while!(|c: char| check_ident(Some(c), true)) >>
-           (gen_token(c, l))
-       )
-);
-named!(token_ident<CompleteStr, Token>,
-       map!(token_ident_str, |s| {
-           if let Some(k) = parse_reserved_keyword(s.as_str()) {
-               k
-           }else {
-               Token::Ident(s)
-           }
-       })
-);
-
-// Binary function operator parser
-named!(token_binfop<CompleteStr, Token>,
-       do_parse!(
-           tag!("`") >>
-           i: token_ident_str >>
-           tag!("`") >>
-               (match i.as_str() {
-                   "mul" => Token::MulOp,
-                   "div" => Token::DivOp,
-                   "and" => Token::AndOp,
-                   "or"  => Token::OrOp,
-                   _ => Token::BinaryFnOp(i),
-               })
-       )
-);
-
-// Symbol parser
-named!(token_symbol<CompleteStr, Token>,
-       alt!(
-           tag!("->") => { |_| Token::Arrow }        |
-           tag!("::") => { |_| Token::DoubleColon }  |
-           tag!("=")  => { |_| Token::EqualOp }      |
-           tag!("+")  => { |_| Token::AddOp }        |
-           tag!("-")  => { |_| Token::SubOp }        |
-           tag!("/")  => { |_| Token::DivOp }        |
-           tag!("*")  => { |_| Token::MulOp }        |
-           tag!("%")  => { |_| Token::ModOp }        |
-           tag!("(")  => { |_| Token::LParen }       |
-           tag!(")")  => { |_| Token::RParen }       |
-           tag!(".")  => { |_| Token::Dot }          |
-           tag!(",")  => { |_| Token::Comma }        |
-           tag!("{")  => { |_| Token::LBlock }       |
-           tag!("}")  => { |_| Token::RBlock }       |
-           tag!(":")  => { |_| Token::Colon }        |
-           tag!(";")  => { |_| Token::EndLine }
-       )
-);
-
-// String parser
-named!(
-    token_string_escape<CompleteStr, String>,
-        escaped_transform!(
-            is_not!("\n\\'"),
-            '\\',
-            alt!(
-                         tag!("\\")   => { |_| "\\" }
-                         | tag!("'")  => { |_| "'"  }
-                         | tag!("n")  => { |_| "\n" }
-                     )
-        )
-);
-named!(token_string<CompleteStr, Token>,
-       do_parse!(
-           tag!("'")              >>
-           s: token_string_escape >>
-           tag!("'")              >>
-           (Token::String(s))
-       )
-);
-
-// Integer parser
-named!(token_integer<CompleteStr, Token>,
-       map!(
-           alt!(
-               do_parse!(
-                   tag!("0x") >>
-                   num: map_res!(nom::hex_digit, |res: CompleteStr| i64::from_str_radix(res.0, 16)) >>
-                   (num)
-               ) |
-               do_parse!(
-                   tag!("0b") >>
-                   num: map_res!(nom::digit, |res: CompleteStr| i64::from_str_radix(res.0, 2)) >>
-                   (num)
-               ) |
-               map_res!(nom::digit, |res: CompleteStr| {
-                   if &res.0[0..1] == "0" {
-                       i64::from_str_radix(res.0, 8)
-                   } else {
-                       i64::from_str_radix(res.0, 10)
-                   }
-               })
-           ),
-           Token::Integer
-       )
-);
-
-named!(token_lex<CompleteStr, Token>,
-       alt!(
-           token_ident    |
-           token_integer  |
-           token_string   |
-           token_symbol   |
-           token_binfop
-       )
-);
-
-named!(pub token_line<CompleteStr, Vec<Token>>,
-       ws!(many0!(token_lex))
-);
-
-named!(pub token_maysick_line<CompleteStr, Vec<Token>>,
-       do_parse!(
-            map!(nom::digit, |_| ()) >>
-            r: token_line            >>
-            (r)
-          )
-);
 
 /* tests */
 

@@ -18,7 +18,6 @@ name = "maylsp"
 path = "lsp-server/main.rs"
 
 [dependencies]
-clap = "*"
-nom = "*"
+clap = "2.33.3"
 rand = "0.7.3"
 encoding_rs = "^0.8.24"
