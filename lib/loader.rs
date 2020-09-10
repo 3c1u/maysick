@@ -10,7 +10,6 @@ use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
 use crate::ast::*;
-use crate::lexer::*;
 use crate::parser::*;
 use crate::token::*;
 
@@ -20,7 +19,7 @@ use crate::eval;
 use crate::eval::env::*;
 
 fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
-    let mut tokens: Vec<Token> = Vec::new();
+    /* let mut tokens: Vec<Token> = Vec::new();
 
     if let Ok(entries) = pbuf.read_dir() {
         let mut entries_: Vec<_> = entries.map(Result::unwrap).collect();
@@ -72,7 +71,8 @@ fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
         }
     }
 
-    Ok(tokens)
+    Ok(tokens) */
+    todo!()
 }
 
 fn obtain_program(path: &str) -> Result<Program, Error> {
@@ -87,8 +87,7 @@ fn obtain_program(path: &str) -> Result<Program, Error> {
 
     if is_dir && exists {
         let tokens = get_token_from_directory(&pbuf).unwrap();
-        parse_program(Tokens::new(&tokens))
-            .map(|(_, r)| r)
+        parse_program(&tokens)
             .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
     } else if !file_exists {
         // 存在しないとき
@@ -106,10 +105,9 @@ fn obtain_program(path: &str) -> Result<Program, Error> {
         let mut contents = String::new();
         fin.read_to_string(&mut contents).unwrap();
 
-        let tokens = token_line(CompleteStr::from(&contents as &str)).unwrap().1;
+        let tokens = token_line(&contents).unwrap();
 
-        parse_program(Tokens::new(&tokens))
-            .map(|(_, r)| r)
+        parse_program(&tokens)
             .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
     }
 }

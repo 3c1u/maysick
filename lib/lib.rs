@@ -6,7 +6,6 @@ use std::io::{stdout, Error, ErrorKind, Write};
 pub mod ast;
 pub mod codegen;
 pub mod eval;
-pub mod lexer;
 pub mod loader;
 pub mod parser;
 pub mod prelude;
