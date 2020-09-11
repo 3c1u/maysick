@@ -103,10 +103,8 @@ fn obtain_program(path: &str) -> Result<Program, Error> {
 
         let mut contents = String::new();
         fin.read_to_string(&mut contents).unwrap();
-
-        let tokens = token_line(&contents).unwrap();
-
-        parse_program(&tokens).map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
+        full_parse_program(&contents)
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
     }
 }
 

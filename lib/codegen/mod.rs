@@ -231,6 +231,7 @@ impl Codegen for Stmt {
         let mut code = String::new();
 
         match self {
+            Stmt::Block(..) => todo!(),
             Stmt::FnDef(i, a, b) => {
                 global.fn_syms.insert(
                     i.to_owned(),

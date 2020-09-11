@@ -113,6 +113,7 @@ pub fn eval_expr(_e: EnvRef, x: &Expr) -> Result<MayObject, RuntimeError> {
 
 pub fn eval_stmt(e: EnvRef, s: &Stmt) -> Result<MayObject, RuntimeError> {
     match s {
+        Stmt::Block(..) => todo!(),
         Stmt::FnDef(i, args, block) => {
             let fndef = MayObject::Fn(args.clone(), block.clone());
             e.borrow_mut().set_let(i.clone(), &fndef)?;
