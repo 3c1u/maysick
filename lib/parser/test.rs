@@ -35,7 +35,7 @@ mod test_parser {
 
     #[test]
     fn t_full_parse() {
-        let input = r#"fn kani(a b c) {}"#;
+        let input = r#"'とーかちゃんの' + 'かに';"#;
 
         let program = full_parse_program(input).unwrap();
         println!("{:#?}", program);
