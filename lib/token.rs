@@ -86,7 +86,7 @@ pub struct AttributedToken {
 }
 
 impl Token {
-    fn token_type(&self) -> isize {
+    pub fn token_type(&self) -> isize {
         use crate::grammar::maysicklexer as t;
 
         match self {

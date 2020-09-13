@@ -19,8 +19,7 @@ use lis::MaysickListener;
 use par::*;
 
 use antlr_rust::input_stream::InputStream;
-use antlr_rust::token_source::TokenSource;
-use antlr_rust::tree::{ErrorNode, ParseTree, ParseTreeListener, TerminalNode, TerminalNodeCtx};
+use antlr_rust::tree::{ParseTree, ParseTreeListener};
 use antlr_rust::{common_token_stream::CommonTokenStream, errors::ANTLRError};
 
 pub fn token_maysick_line(_input: &str) -> Result<Vec<Token>, ()> {
@@ -143,7 +142,7 @@ impl MaysickListener for ASTBuilder {
 
     fn exit_IfExpr(&mut self, ctx: &IfExprContext) {
         let cond = self.stack_expr.pop().unwrap();
-        let else_stmt = if ctx.else_stmt().is_some() {
+        let _else_stmt = if ctx.else_stmt().is_some() {
             self.stack_stmt.pop()
         } else {
             None
@@ -157,7 +156,7 @@ impl MaysickListener for ASTBuilder {
         self.stack_expr.push(Expr::If(Box::new(cond), block));
     }
 
-    fn exit_WhileExpr(&mut self, ctx: &WhileExprContext) {
+    fn exit_WhileExpr(&mut self, _ctx: &WhileExprContext) {
         let cond = self.stack_expr.pop().unwrap();
         let block = if let Some(Stmt::Block(b)) = self.stack_stmt.pop() {
             b
@@ -206,11 +205,13 @@ impl MaysickListener for ASTBuilder {
 
         self.stack_stmt.push(Stmt::FnDef(
             name.get_text(),
-            { let mut arr: Vec<_> = ctx.IDENT_all()
-                .iter()
-                .skip(3)
-                .map(|v| v.get_text())
-                .collect();
+            {
+                let mut arr: Vec<_> = ctx
+                    .IDENT_all()
+                    .iter()
+                    .skip(3)
+                    .map(|v| v.get_text())
+                    .collect();
                 arr.pop();
                 arr
             },

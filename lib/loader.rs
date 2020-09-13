@@ -11,15 +11,14 @@ use std::path::PathBuf;
 
 use crate::ast::*;
 use crate::parser::*;
-use crate::token::*;
 
 use crate::codegen;
 
 use crate::eval;
 use crate::eval::env::*;
 
-fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
-    /* let mut tokens: Vec<Token> = Vec::new();
+fn get_token_from_directory(pbuf: &PathBuf) -> Result<String, Error> {
+    let mut program = String::new();
 
     if let Ok(entries) = pbuf.read_dir() {
         let mut entries_: Vec<_> = entries.map(Result::unwrap).collect();
@@ -33,46 +32,30 @@ fn get_token_from_directory(pbuf: &PathBuf) -> Result<Vec<Token>, Error> {
                 continue;
             }
 
-            let token = match p.file_name().unwrap().to_str() {
+            let input = match p.file_name().unwrap().to_str() {
                 Some(t) => t,
                 None => return Err(Error::new(ErrorKind::Other, "Cannot obtain file name.")),
             };
 
-            let parsed = match token_maysick_line(CompleteStr::from(token)) {
-                Ok((r, res)) => {
-                    if r.0.is_empty() {
-                        res
-                    } else {
-                        println!("Unconsumed token\"{}\"", r);
-                        return Err(Error::new(ErrorKind::Other, "Unconsumed token."));
-                    }
-                }
-                Err(e) => {
-                    println!("Error: {:?}", e);
-                    return Err(Error::new(
-                        ErrorKind::Other,
-                        "Failed to lex due to lexer error.",
-                    ));
-                }
-            };
+            let input = input.trim_start_matches(|p: char| p.is_numeric() || p.is_whitespace());
 
             let child = get_token_from_directory(&p)?;
 
-            tokens.extend(parsed);
-
             match child.len() {
-                0 => tokens.push(Token::EndLine),
+                0 => {
+                    program.push_str(input);
+                    program.push(';');
+                }
                 _ => {
-                    tokens.push(Token::LBlock);
-                    tokens.extend(child);
-                    tokens.push(Token::RBlock);
+                    program.push('{');
+                    program.push_str(&child);
+                    program.push('}');
                 }
             }
         }
     }
 
-    Ok(tokens) */
-    todo!()
+    Ok(program)
 }
 
 fn obtain_program(path: &str) -> Result<Program, Error> {
@@ -87,7 +70,8 @@ fn obtain_program(path: &str) -> Result<Program, Error> {
 
     if is_dir && exists {
         let tokens = get_token_from_directory(&pbuf).unwrap();
-        parse_program(&tokens).map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
+        full_parse_program(&tokens)
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to parse."))
     } else if !file_exists {
         // 存在しないとき
         Err(Error::new(
@@ -112,8 +96,6 @@ pub fn run_interpreter(path: &str) {
     let p_ = obtain_program(path);
     match p_ {
         Ok(p) => {
-            println!("{:#?}", p);
-            
             let e = Env::new_ref();
             eval::eval(e, p).unwrap();
         }

@@ -54,13 +54,13 @@ expr
     ;
 
 expr_ident
-    : IDENT                                       # ExprIdent_Ident
-    | LIT_STRING                                  # ExprIdent_StrLiteral
+    : LIT_STRING                                  # ExprIdent_StrLiteral
     | LIT_NUMBER                                  # ExprIdent_NumLiteral
+    | fn_call                                     # ExprIdent_FnCall
     | SYM_LPAREN expr SYM_RPAREN                  # ExprIdent_Paren
-    | if_expr                                     # ExprIdent_Ident
-    | while_expr                                  # ExprIdent_Ident
-    | fn_call                                     # ExprIdent_Ident
+    | if_expr                                     # ExprIdent_IfExpr
+    | while_expr                                  # ExprIdent_WhileExpr
+    | IDENT                                       # ExprIdent_Ident
     ;
 
 expr_unary

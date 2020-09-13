@@ -265,19 +265,6 @@ pub trait MaysickListener: ParseTreeListener {
     fn exit_Expr_Or_(&mut self, _ctx: &Expr_Or_Context) {}
 
     /**
-     * Enter a parse tree produced by the {@code ExprIdent_Ident}
-     * labeled alternative in {@link MaysickParser#expr_ident}.
-     * @param ctx the parse tree
-     */
-    fn enter_ExprIdent_Ident(&mut self, _ctx: &ExprIdent_IdentContext) {}
-    /**
-     * Exit a parse tree produced by the {@code ExprIdent_Ident}
-     * labeled alternative in {@link MaysickParser#expr_ident}.
-     * @param ctx the parse tree
-     */
-    fn exit_ExprIdent_Ident(&mut self, _ctx: &ExprIdent_IdentContext) {}
-
-    /**
      * Enter a parse tree produced by the {@code ExprIdent_StrLiteral}
      * labeled alternative in {@link MaysickParser#expr_ident}.
      * @param ctx the parse tree
@@ -304,6 +291,19 @@ pub trait MaysickListener: ParseTreeListener {
     fn exit_ExprIdent_NumLiteral(&mut self, _ctx: &ExprIdent_NumLiteralContext) {}
 
     /**
+     * Enter a parse tree produced by the {@code ExprIdent_FnCall}
+     * labeled alternative in {@link MaysickParser#expr_ident}.
+     * @param ctx the parse tree
+     */
+    fn enter_ExprIdent_FnCall(&mut self, _ctx: &ExprIdent_FnCallContext) {}
+    /**
+     * Exit a parse tree produced by the {@code ExprIdent_FnCall}
+     * labeled alternative in {@link MaysickParser#expr_ident}.
+     * @param ctx the parse tree
+     */
+    fn exit_ExprIdent_FnCall(&mut self, _ctx: &ExprIdent_FnCallContext) {}
+
+    /**
      * Enter a parse tree produced by the {@code ExprIdent_Paren}
      * labeled alternative in {@link MaysickParser#expr_ident}.
      * @param ctx the parse tree
@@ -315,6 +315,45 @@ pub trait MaysickListener: ParseTreeListener {
      * @param ctx the parse tree
      */
     fn exit_ExprIdent_Paren(&mut self, _ctx: &ExprIdent_ParenContext) {}
+
+    /**
+     * Enter a parse tree produced by the {@code ExprIdent_IfExpr}
+     * labeled alternative in {@link MaysickParser#expr_ident}.
+     * @param ctx the parse tree
+     */
+    fn enter_ExprIdent_IfExpr(&mut self, _ctx: &ExprIdent_IfExprContext) {}
+    /**
+     * Exit a parse tree produced by the {@code ExprIdent_IfExpr}
+     * labeled alternative in {@link MaysickParser#expr_ident}.
+     * @param ctx the parse tree
+     */
+    fn exit_ExprIdent_IfExpr(&mut self, _ctx: &ExprIdent_IfExprContext) {}
+
+    /**
+     * Enter a parse tree produced by the {@code ExprIdent_WhileExpr}
+     * labeled alternative in {@link MaysickParser#expr_ident}.
+     * @param ctx the parse tree
+     */
+    fn enter_ExprIdent_WhileExpr(&mut self, _ctx: &ExprIdent_WhileExprContext) {}
+    /**
+     * Exit a parse tree produced by the {@code ExprIdent_WhileExpr}
+     * labeled alternative in {@link MaysickParser#expr_ident}.
+     * @param ctx the parse tree
+     */
+    fn exit_ExprIdent_WhileExpr(&mut self, _ctx: &ExprIdent_WhileExprContext) {}
+
+    /**
+     * Enter a parse tree produced by the {@code ExprIdent_Ident}
+     * labeled alternative in {@link MaysickParser#expr_ident}.
+     * @param ctx the parse tree
+     */
+    fn enter_ExprIdent_Ident(&mut self, _ctx: &ExprIdent_IdentContext) {}
+    /**
+     * Exit a parse tree produced by the {@code ExprIdent_Ident}
+     * labeled alternative in {@link MaysickParser#expr_ident}.
+     * @param ctx the parse tree
+     */
+    fn exit_ExprIdent_Ident(&mut self, _ctx: &ExprIdent_IdentContext) {}
 
     /**
      * Enter a parse tree produced by the {@code ExprUnary_Minus}

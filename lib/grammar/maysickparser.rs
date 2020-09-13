@@ -3001,8 +3001,11 @@ impl MaysickParser {
 pub enum Expr_identContextAll {
     ExprIdent_NumLiteralContext(ExprIdent_NumLiteralContext),
     ExprIdent_ParenContext(ExprIdent_ParenContext),
-    ExprIdent_IdentContext(ExprIdent_IdentContext),
+    ExprIdent_IfExprContext(ExprIdent_IfExprContext),
+    ExprIdent_WhileExprContext(ExprIdent_WhileExprContext),
+    ExprIdent_FnCallContext(ExprIdent_FnCallContext),
     ExprIdent_StrLiteralContext(ExprIdent_StrLiteralContext),
+    ExprIdent_IdentContext(ExprIdent_IdentContext),
     Error(Expr_identContext),
 }
 
@@ -3015,8 +3018,11 @@ impl Deref for Expr_identContextAll {
         match self {
             ExprIdent_NumLiteralContext(inner) => inner,
             ExprIdent_ParenContext(inner) => inner,
-            ExprIdent_IdentContext(inner) => inner,
+            ExprIdent_IfExprContext(inner) => inner,
+            ExprIdent_WhileExprContext(inner) => inner,
+            ExprIdent_FnCallContext(inner) => inner,
             ExprIdent_StrLiteralContext(inner) => inner,
+            ExprIdent_IdentContext(inner) => inner,
             Error(inner) => inner,
         }
     }
@@ -3206,44 +3212,24 @@ impl ExprIdent_ParenContextExt {
     }
 }
 
-pub type ExprIdent_IdentContext = BaseParserRuleContext<ExprIdent_IdentContextExt>;
+pub type ExprIdent_IfExprContext = BaseParserRuleContext<ExprIdent_IfExprContextExt>;
 
-pub trait ExprIdent_IdentContextAttrs: ParserRuleContext {
-    /// Retrieves first TerminalNode corresponding to token IDENT
-    /// Returns `None` if there is no child corresponding to token IDENT
-    fn IDENT(&self) -> Option<Rc<TerminalNode>>
-    where
-        Self: Sized,
-    {
-        self.get_token(IDENT, 0)
-    }
+pub trait ExprIdent_IfExprContextAttrs: ParserRuleContext {
     fn if_expr(&self) -> Option<Rc<If_exprContextAll>>
     where
         Self: Sized,
     {
         self.child_of_type(0)
     }
-    fn while_expr(&self) -> Option<Rc<While_exprContextAll>>
-    where
-        Self: Sized,
-    {
-        self.child_of_type(0)
-    }
-    fn fn_call(&self) -> Option<Rc<Fn_callContextAll>>
-    where
-        Self: Sized,
-    {
-        self.child_of_type(0)
-    }
 }
 
-impl ExprIdent_IdentContextAttrs for ExprIdent_IdentContext {}
+impl ExprIdent_IfExprContextAttrs for ExprIdent_IfExprContext {}
 
-pub struct ExprIdent_IdentContextExt {
+pub struct ExprIdent_IfExprContextExt {
     base: Expr_identContextExt,
 }
 
-impl CustomRuleContext for ExprIdent_IdentContextExt {
+impl CustomRuleContext for ExprIdent_IfExprContextExt {
     fn get_rule_index(&self) -> usize {
         RULE_expr_ident
     }
@@ -3253,7 +3239,7 @@ impl CustomRuleContext for ExprIdent_IdentContextExt {
     {
         listener
             .downcast_mut::<Box<dyn MaysickListener>>()
-            .map(|it| it.enter_ExprIdent_Ident(ctx));
+            .map(|it| it.enter_ExprIdent_IfExpr(ctx));
     }
     fn exit(ctx: &BaseParserRuleContext<Self>, listener: &mut dyn Any)
     where
@@ -3261,30 +3247,162 @@ impl CustomRuleContext for ExprIdent_IdentContextExt {
     {
         listener
             .downcast_mut::<Box<dyn MaysickListener>>()
-            .map(|it| it.exit_ExprIdent_Ident(ctx));
+            .map(|it| it.exit_ExprIdent_IfExpr(ctx));
     }
 }
 
-impl Borrow<Expr_identContextExt> for ExprIdent_IdentContext {
+impl Borrow<Expr_identContextExt> for ExprIdent_IfExprContext {
     fn borrow(&self) -> &Expr_identContextExt {
         &self.base
     }
 }
-impl BorrowMut<Expr_identContextExt> for ExprIdent_IdentContext {
+impl BorrowMut<Expr_identContextExt> for ExprIdent_IfExprContext {
     fn borrow_mut(&mut self) -> &mut Expr_identContextExt {
         &mut self.base
     }
 }
 
-impl Expr_identContextAttrs for ExprIdent_IdentContext {}
+impl Expr_identContextAttrs for ExprIdent_IfExprContext {}
 
-impl ExprIdent_IdentContextExt {
+impl ExprIdent_IfExprContextExt {
     fn new(ctx: &dyn Expr_identContextAttrs) -> Rc<Expr_identContextAll> {
         //let base = (cast::<_,Expr_identContext>(&ctx));
-        Rc::new(Expr_identContextAll::ExprIdent_IdentContext(
+        Rc::new(Expr_identContextAll::ExprIdent_IfExprContext(
             BaseParserRuleContext::copy_from(
                 ctx,
-                ExprIdent_IdentContextExt {
+                ExprIdent_IfExprContextExt {
+                    base: ctx.borrow().clone(),
+                },
+            ),
+        ))
+    }
+}
+
+pub type ExprIdent_WhileExprContext = BaseParserRuleContext<ExprIdent_WhileExprContextExt>;
+
+pub trait ExprIdent_WhileExprContextAttrs: ParserRuleContext {
+    fn while_expr(&self) -> Option<Rc<While_exprContextAll>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+}
+
+impl ExprIdent_WhileExprContextAttrs for ExprIdent_WhileExprContext {}
+
+pub struct ExprIdent_WhileExprContextExt {
+    base: Expr_identContextExt,
+}
+
+impl CustomRuleContext for ExprIdent_WhileExprContextExt {
+    fn get_rule_index(&self) -> usize {
+        RULE_expr_ident
+    }
+    fn enter(ctx: &BaseParserRuleContext<Self>, listener: &mut dyn Any)
+    where
+        Self: Sized,
+    {
+        listener
+            .downcast_mut::<Box<dyn MaysickListener>>()
+            .map(|it| it.enter_ExprIdent_WhileExpr(ctx));
+    }
+    fn exit(ctx: &BaseParserRuleContext<Self>, listener: &mut dyn Any)
+    where
+        Self: Sized,
+    {
+        listener
+            .downcast_mut::<Box<dyn MaysickListener>>()
+            .map(|it| it.exit_ExprIdent_WhileExpr(ctx));
+    }
+}
+
+impl Borrow<Expr_identContextExt> for ExprIdent_WhileExprContext {
+    fn borrow(&self) -> &Expr_identContextExt {
+        &self.base
+    }
+}
+impl BorrowMut<Expr_identContextExt> for ExprIdent_WhileExprContext {
+    fn borrow_mut(&mut self) -> &mut Expr_identContextExt {
+        &mut self.base
+    }
+}
+
+impl Expr_identContextAttrs for ExprIdent_WhileExprContext {}
+
+impl ExprIdent_WhileExprContextExt {
+    fn new(ctx: &dyn Expr_identContextAttrs) -> Rc<Expr_identContextAll> {
+        //let base = (cast::<_,Expr_identContext>(&ctx));
+        Rc::new(Expr_identContextAll::ExprIdent_WhileExprContext(
+            BaseParserRuleContext::copy_from(
+                ctx,
+                ExprIdent_WhileExprContextExt {
+                    base: ctx.borrow().clone(),
+                },
+            ),
+        ))
+    }
+}
+
+pub type ExprIdent_FnCallContext = BaseParserRuleContext<ExprIdent_FnCallContextExt>;
+
+pub trait ExprIdent_FnCallContextAttrs: ParserRuleContext {
+    fn fn_call(&self) -> Option<Rc<Fn_callContextAll>>
+    where
+        Self: Sized,
+    {
+        self.child_of_type(0)
+    }
+}
+
+impl ExprIdent_FnCallContextAttrs for ExprIdent_FnCallContext {}
+
+pub struct ExprIdent_FnCallContextExt {
+    base: Expr_identContextExt,
+}
+
+impl CustomRuleContext for ExprIdent_FnCallContextExt {
+    fn get_rule_index(&self) -> usize {
+        RULE_expr_ident
+    }
+    fn enter(ctx: &BaseParserRuleContext<Self>, listener: &mut dyn Any)
+    where
+        Self: Sized,
+    {
+        listener
+            .downcast_mut::<Box<dyn MaysickListener>>()
+            .map(|it| it.enter_ExprIdent_FnCall(ctx));
+    }
+    fn exit(ctx: &BaseParserRuleContext<Self>, listener: &mut dyn Any)
+    where
+        Self: Sized,
+    {
+        listener
+            .downcast_mut::<Box<dyn MaysickListener>>()
+            .map(|it| it.exit_ExprIdent_FnCall(ctx));
+    }
+}
+
+impl Borrow<Expr_identContextExt> for ExprIdent_FnCallContext {
+    fn borrow(&self) -> &Expr_identContextExt {
+        &self.base
+    }
+}
+impl BorrowMut<Expr_identContextExt> for ExprIdent_FnCallContext {
+    fn borrow_mut(&mut self) -> &mut Expr_identContextExt {
+        &mut self.base
+    }
+}
+
+impl Expr_identContextAttrs for ExprIdent_FnCallContext {}
+
+impl ExprIdent_FnCallContextExt {
+    fn new(ctx: &dyn Expr_identContextAttrs) -> Rc<Expr_identContextAll> {
+        //let base = (cast::<_,Expr_identContext>(&ctx));
+        Rc::new(Expr_identContextAll::ExprIdent_FnCallContext(
+            BaseParserRuleContext::copy_from(
+                ctx,
+                ExprIdent_FnCallContextExt {
                     base: ctx.borrow().clone(),
                 },
             ),
@@ -3360,6 +3478,74 @@ impl ExprIdent_StrLiteralContextExt {
     }
 }
 
+pub type ExprIdent_IdentContext = BaseParserRuleContext<ExprIdent_IdentContextExt>;
+
+pub trait ExprIdent_IdentContextAttrs: ParserRuleContext {
+    /// Retrieves first TerminalNode corresponding to token IDENT
+    /// Returns `None` if there is no child corresponding to token IDENT
+    fn IDENT(&self) -> Option<Rc<TerminalNode>>
+    where
+        Self: Sized,
+    {
+        self.get_token(IDENT, 0)
+    }
+}
+
+impl ExprIdent_IdentContextAttrs for ExprIdent_IdentContext {}
+
+pub struct ExprIdent_IdentContextExt {
+    base: Expr_identContextExt,
+}
+
+impl CustomRuleContext for ExprIdent_IdentContextExt {
+    fn get_rule_index(&self) -> usize {
+        RULE_expr_ident
+    }
+    fn enter(ctx: &BaseParserRuleContext<Self>, listener: &mut dyn Any)
+    where
+        Self: Sized,
+    {
+        listener
+            .downcast_mut::<Box<dyn MaysickListener>>()
+            .map(|it| it.enter_ExprIdent_Ident(ctx));
+    }
+    fn exit(ctx: &BaseParserRuleContext<Self>, listener: &mut dyn Any)
+    where
+        Self: Sized,
+    {
+        listener
+            .downcast_mut::<Box<dyn MaysickListener>>()
+            .map(|it| it.exit_ExprIdent_Ident(ctx));
+    }
+}
+
+impl Borrow<Expr_identContextExt> for ExprIdent_IdentContext {
+    fn borrow(&self) -> &Expr_identContextExt {
+        &self.base
+    }
+}
+impl BorrowMut<Expr_identContextExt> for ExprIdent_IdentContext {
+    fn borrow_mut(&mut self) -> &mut Expr_identContextExt {
+        &mut self.base
+    }
+}
+
+impl Expr_identContextAttrs for ExprIdent_IdentContext {}
+
+impl ExprIdent_IdentContextExt {
+    fn new(ctx: &dyn Expr_identContextAttrs) -> Rc<Expr_identContextAll> {
+        //let base = (cast::<_,Expr_identContext>(&ctx));
+        Rc::new(Expr_identContextAll::ExprIdent_IdentContext(
+            BaseParserRuleContext::copy_from(
+                ctx,
+                ExprIdent_IdentContextExt {
+                    base: ctx.borrow().clone(),
+                },
+            ),
+        ))
+    }
+}
+
 impl MaysickParser {
     pub fn expr_ident(&mut self) -> Result<Rc<Expr_identContextAll>, ANTLRError> {
         let mut recog = self;
@@ -3374,34 +3560,35 @@ impl MaysickParser {
             recog.err_handler.sync(&mut recog.base)?;
             match recog.interpreter.adaptive_predict(5, &mut recog.base)? {
                 1 => {
-                    let tmp = ExprIdent_IdentContextExt::new(&**_localctx);
+                    let tmp = ExprIdent_StrLiteralContextExt::new(&**_localctx);
                     recog.base.enter_outer_alt(Some(tmp.clone()), 1);
                     _localctx = tmp;
                     {
                         recog.base.set_state(116);
-                        recog.base.match_token(IDENT, recog.err_handler.as_mut())?;
+                        recog
+                            .base
+                            .match_token(LIT_STRING, recog.err_handler.as_mut())?;
                     }
                 }
                 2 => {
-                    let tmp = ExprIdent_StrLiteralContextExt::new(&**_localctx);
+                    let tmp = ExprIdent_NumLiteralContextExt::new(&**_localctx);
                     recog.base.enter_outer_alt(Some(tmp.clone()), 2);
                     _localctx = tmp;
                     {
                         recog.base.set_state(117);
                         recog
                             .base
-                            .match_token(LIT_STRING, recog.err_handler.as_mut())?;
+                            .match_token(LIT_NUMBER, recog.err_handler.as_mut())?;
                     }
                 }
                 3 => {
-                    let tmp = ExprIdent_NumLiteralContextExt::new(&**_localctx);
+                    let tmp = ExprIdent_FnCallContextExt::new(&**_localctx);
                     recog.base.enter_outer_alt(Some(tmp.clone()), 3);
                     _localctx = tmp;
                     {
+                        /*InvokeRule fn_call*/
                         recog.base.set_state(118);
-                        recog
-                            .base
-                            .match_token(LIT_NUMBER, recog.err_handler.as_mut())?;
+                        recog.fn_call()?;
                     }
                 }
                 4 => {
@@ -3425,7 +3612,7 @@ impl MaysickParser {
                     }
                 }
                 5 => {
-                    let tmp = ExprIdent_IdentContextExt::new(&**_localctx);
+                    let tmp = ExprIdent_IfExprContextExt::new(&**_localctx);
                     recog.base.enter_outer_alt(Some(tmp.clone()), 5);
                     _localctx = tmp;
                     {
@@ -3435,7 +3622,7 @@ impl MaysickParser {
                     }
                 }
                 6 => {
-                    let tmp = ExprIdent_IdentContextExt::new(&**_localctx);
+                    let tmp = ExprIdent_WhileExprContextExt::new(&**_localctx);
                     recog.base.enter_outer_alt(Some(tmp.clone()), 6);
                     _localctx = tmp;
                     {
@@ -3449,9 +3636,8 @@ impl MaysickParser {
                     recog.base.enter_outer_alt(Some(tmp.clone()), 7);
                     _localctx = tmp;
                     {
-                        /*InvokeRule fn_call*/
                         recog.base.set_state(125);
-                        recog.fn_call()?;
+                        recog.base.match_token(IDENT, recog.err_handler.as_mut())?;
                     }
                 }
 
@@ -6259,10 +6445,10 @@ const _serializedATN: &'static str =
 	\x0c\x02\x6d\x6c\x03\x02\x02\x02\x6e\x71\x03\x02\x02\x02\x6f\x6d\x03\x02\
 	\x02\x02\x6f\x70\x03\x02\x02\x02\x70\x72\x03\x02\x02\x02\x71\x6f\x03\x02\
 	\x02\x02\x72\x73\x07\x0c\x02\x02\x73\x15\x03\x02\x02\x02\x74\x75\x05\x22\
-	\x12\x02\x75\x17\x03\x02\x02\x02\x76\u{81}\x07\x1c\x02\x02\x77\u{81}\x07\
-	\x1d\x02\x02\x78\u{81}\x07\x1e\x02\x02\x79\x7a\x07\x0b\x02\x02\x7a\x7b\x05\
+	\x12\x02\x75\x17\x03\x02\x02\x02\x76\u{81}\x07\x1d\x02\x02\x77\u{81}\x07\
+	\x1e\x02\x02\x78\u{81}\x05\x14\x0b\x02\x79\x7a\x07\x0b\x02\x02\x7a\x7b\x05\
 	\x16\x0c\x02\x7b\x7c\x07\x0c\x02\x02\x7c\u{81}\x03\x02\x02\x02\x7d\u{81}\
-	\x05\x26\x14\x02\x7e\u{81}\x05\x2a\x16\x02\x7f\u{81}\x05\x14\x0b\x02\u{80}\
+	\x05\x26\x14\x02\x7e\u{81}\x05\x2a\x16\x02\x7f\u{81}\x07\x1c\x02\x02\u{80}\
 	\x76\x03\x02\x02\x02\u{80}\x77\x03\x02\x02\x02\u{80}\x78\x03\x02\x02\x02\
 	\u{80}\x79\x03\x02\x02\x02\u{80}\x7d\x03\x02\x02\x02\u{80}\x7e\x03\x02\x02\
 	\x02\u{80}\x7f\x03\x02\x02\x02\u{81}\x19\x03\x02\x02\x02\u{82}\u{83}\x07\
