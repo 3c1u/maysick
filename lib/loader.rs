@@ -112,6 +112,8 @@ pub fn run_interpreter(path: &str) {
     let p_ = obtain_program(path);
     match p_ {
         Ok(p) => {
+            println!("{:#?}", p);
+            
             let e = Env::new_ref();
             eval::eval(e, p).unwrap();
         }

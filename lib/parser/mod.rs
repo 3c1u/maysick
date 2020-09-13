@@ -77,7 +77,12 @@ impl ASTBuilder {
 impl MaysickListener for ASTBuilder {
     // expr_ident
     fn exit_ExprIdent_Ident(&mut self, ctx: &ExprIdent_IdentContext) {
-        let ident = ctx.IDENT().unwrap().get_text();
+        let ident = if let Some(i) = ctx.IDENT() {
+            i
+        } else {
+            return; // WTF
+        }
+        .get_text();
         self.stack_expr.push(Expr::Ident(ident));
     }
 
@@ -192,7 +197,7 @@ impl MaysickListener for ASTBuilder {
     }
 
     fn exit_StmtFnDef(&mut self, ctx: &StmtFnDefContext) {
-        let name = ctx.IDENT_all();
+        let name = ctx.IDENT(0).unwrap();
         let block = if let Some(Stmt::Block(b)) = self.stack_stmt.pop() {
             b
         } else {
@@ -200,8 +205,15 @@ impl MaysickListener for ASTBuilder {
         };
 
         self.stack_stmt.push(Stmt::FnDef(
-            name[0].get_text(),
-            name.iter().skip(1).map(|v| v.get_text()).collect(),
+            name.get_text(),
+            { let mut arr: Vec<_> = ctx.IDENT_all()
+                .iter()
+                .skip(3)
+                .map(|v| v.get_text())
+                .collect();
+                arr.pop();
+                arr
+            },
             block,
         ));
     }
