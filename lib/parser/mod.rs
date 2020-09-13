@@ -140,6 +140,10 @@ impl MaysickListener for ASTBuilder {
         self.construct_infix(Infix::OrOp)
     }
 
+    fn exit_ExprOr_SymEq(&mut self, _ctx: &ExprOr_SymEqContext) {
+        self.construct_infix(Infix::EqualOp)
+    }
+
     fn exit_IfExpr(&mut self, ctx: &IfExprContext) {
         let cond = self.stack_expr.pop().unwrap();
         let _else_stmt = if ctx.else_stmt().is_some() {

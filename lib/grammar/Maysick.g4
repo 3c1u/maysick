@@ -89,6 +89,7 @@ expr_and
 expr_or
     : expr_and                                    # ExprOr_And_
     | expr_or SYM_OR expr_and                     # ExprOr_Or
+    | expr_and SYM_EQ expr_or                     # ExprOr_Eq
     ;
 
 block

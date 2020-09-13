@@ -1,5 +1,6 @@
 use super::*;
-use antlr_rust::token::{Token as AntlrToken, TOKEN_EOF};
+use antlr_rust::token::TOKEN_EOF;
+use antlr_rust::token_source::TokenSource;
 
 mod test_lexer {
     use super::*;
@@ -24,7 +25,7 @@ mod test_lexer {
                 continue;
             }
 
-            let tok = AttributedToken::new(&tok);
+            let _ = AttributedToken::new(&tok);
         }
     }
 }
@@ -35,8 +36,7 @@ mod test_parser {
     #[test]
     fn t_full_parse() {
         let input = r#"'とーかちゃんの' + 'かに';"#;
-
-        let program = full_parse_program(input).unwrap();
+        let _ = full_parse_program(input).unwrap();
     }
 
     #[test]
@@ -64,7 +64,6 @@ mod test_parser {
 
     #[test]
     fn t_expr_literal_integer() {
-        let tokens = vec![Token::Integer(1123)];
         assert_eq!(
             full_parse_program("1123;").unwrap(),
             vec![Stmt::Expr(Expr::Literal(Literal::Integer(1123)))]
@@ -119,19 +118,11 @@ mod test_parser {
         );
     }
 
-    /*
     #[test]
     fn t_expr_infix_03() {
-        let tokens = vec![
-            Token::Integer(11),
-            Token::SubOp,
-            Token::Integer(2),
-            Token::SubOp,
-            Token::Integer(3),
-        ];
         assert_eq!(
-            parse_expr(&tokens),
-            Ok(Expr::Infix(
+            full_parse_program("11-2-3;").unwrap(),
+            vec![Stmt::Expr(Expr::Infix(
                 Infix::SubOp,
                 Box::new(Expr::Infix(
                     Infix::SubOp,
@@ -139,36 +130,27 @@ mod test_parser {
                     Box::new(Expr::Literal(Literal::Integer(2)))
                 )),
                 Box::new(Expr::Literal(Literal::Integer(3)))
-            ))
+            ))]
         );
     }
 
     #[test]
     fn t_expr_infix_04() {
-        let tokens = vec![
-            Token::Integer(11),
-            Token::SubOp,
-            Token::Integer(2),
-            Token::MulOp,
-            Token::Integer(3),
-            Token::EqualOp,
-            Token::Integer(4),
-        ];
         assert_eq!(
-            parse_expr(&tokens),
-            Ok(Expr::Infix(
-                Infix::SubOp,
-                Box::new(Expr::Literal(Literal::Integer(11))),
+            full_parse_program("11 - 2 * 3 = 4;").unwrap(),
+            vec![Stmt::Expr(Expr::Infix(
+                Infix::EqualOp,
                 Box::new(Expr::Infix(
-                    Infix::MulOp,
-                    Box::new(Expr::Literal(Literal::Integer(2))),
+                    Infix::SubOp,
+                    Box::new(Expr::Literal(Literal::Integer(11))),
                     Box::new(Expr::Infix(
-                        Infix::EqualOp,
+                        Infix::MulOp,
+                        Box::new(Expr::Literal(Literal::Integer(2))),
                         Box::new(Expr::Literal(Literal::Integer(3))),
-                        Box::new(Expr::Literal(Literal::Integer(4)))
                     )),
                 )),
-            ))
+                Box::new(Expr::Literal(Literal::Integer(4))),
+            )),]
         );
     }
 
@@ -190,14 +172,6 @@ mod test_parser {
 
     #[test]
     fn t_stmt_fndef() {
-        let tokens = vec![
-            Token::KFn,
-            Token::Ident("senko".to_string()),
-            Token::LParen,
-            Token::RParen,
-            Token::LBlock,
-            Token::RBlock,
-        ];
         let program = r#"fn senko() {}"#;
         let res = vec![Stmt::FnDef("senko".to_string(), vec![], vec![])];
 
@@ -210,20 +184,13 @@ mod test_parser {
 
     #[test]
     fn t_stmt_let() {
-        let tokens = vec![
-            Token::KLet,
-            Token::Ident("senko".to_string()),
-            Token::EqualOp,
-            Token::Integer(1123),
-            Token::EndLine,
-        ];
         let res = vec![Stmt::Let(
             "senko".to_string(),
             None,
             Expr::Literal(Literal::Integer(1123)),
         )];
 
-        if let Ok(pres) = parse_program(&tokens) {
+        if let Ok(pres) = full_parse_program("let senko = 1123;") {
             assert_eq!(pres, res);
         } else {
             panic!("Failed to parse.");
@@ -232,20 +199,13 @@ mod test_parser {
 
     #[test]
     fn t_stmt_var() {
-        let tokens = vec![
-            Token::KVar,
-            Token::Ident("senko".to_string()),
-            Token::EqualOp,
-            Token::Integer(1123),
-            Token::EndLine,
-        ];
         let res = vec![Stmt::Var(
             "senko".to_string(),
             None,
             Expr::Literal(Literal::Integer(1123)),
         )];
 
-        if let Ok(pres) = parse_program(&tokens) {
+        if let Ok(pres) = full_parse_program("var senko = 1123;") {
             assert_eq!(pres, res);
         } else {
             panic!("Failed to parse.");
@@ -254,27 +214,6 @@ mod test_parser {
 
     #[test]
     fn t_helloworld() {
-        let tokens = vec![
-            Token::KFn,
-            Token::Ident("main".to_string()),
-            Token::LParen,
-            Token::RParen,
-            Token::LBlock,
-            Token::KLet,
-            Token::Ident("retval".to_string()),
-            Token::EqualOp,
-            Token::Integer(0),
-            Token::EndLine,
-            Token::Ident("println".to_string()),
-            Token::LParen,
-            Token::String("Hello, world!".to_string()),
-            Token::RParen,
-            Token::EndLine,
-            Token::KReturn,
-            Token::Ident("retval".to_string()),
-            Token::EndLine,
-            Token::RBlock,
-        ];
         let res = vec![Stmt::FnDef(
             "main".to_string(),
             vec![],
@@ -291,11 +230,18 @@ mod test_parser {
                 Stmt::Return(Some(Expr::Ident("retval".to_string()))),
             ],
         )];
-        if let Ok(pres) = parse_program(&tokens) {
+        if let Ok(pres) = full_parse_program(
+            r#"
+        fn main() {
+            let retval = 0;
+            println('Hello, world!');
+            return retval;
+        }
+        "#,
+        ) {
             assert_eq!(pres, res);
         } else {
             panic!("Failed to parse.");
         }
     }
-    */
 }

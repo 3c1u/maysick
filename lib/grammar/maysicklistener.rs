@@ -512,6 +512,19 @@ pub trait MaysickListener: ParseTreeListener {
     fn exit_ExprOr_Or(&mut self, _ctx: &ExprOr_OrContext) {}
 
     /**
+     * Enter a parse tree produced by the {@code ExprOr_SymEq}
+     * labeled alternative in {@link MaysickParser#expr_or}.
+     * @param ctx the parse tree
+     */
+    fn enter_ExprOr_SymEq(&mut self, _ctx: &ExprOr_SymEqContext) {}
+    /**
+     * Exit a parse tree produced by the {@code ExprOr_SymEq}
+     * labeled alternative in {@link MaysickParser#expr_or}.
+     * @param ctx the parse tree
+     */
+    fn exit_ExprOr_SymEq(&mut self, _ctx: &ExprOr_SymEqContext) {}
+
+    /**
      * Enter a parse tree produced by the {@code ExprOr_And_}
      * labeled alternative in {@link MaysickParser#expr_or}.
      * @param ctx the parse tree
