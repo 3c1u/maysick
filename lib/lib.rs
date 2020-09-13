@@ -1,5 +1,8 @@
+#![feature(try_blocks)]
+#![feature(exclusive_range_pattern)]
+
 #[macro_use]
-extern crate nom;
+extern crate lazy_static;
 
 use clap::{App, Arg, SubCommand};
 
@@ -9,11 +12,12 @@ use std::io::{stdout, Error, ErrorKind, Write};
 pub mod ast;
 pub mod codegen;
 pub mod eval;
-pub mod lexer;
 pub mod loader;
 pub mod parser;
 pub mod prelude;
 pub mod token;
+
+pub(crate) mod grammar;
 
 /**
  * Parse arguments as a maysick interpreter.

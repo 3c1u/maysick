@@ -92,6 +92,8 @@ pub enum Stmt {
     Expr(Expr),
 
     Import(String),
+
+    Block(Block),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
