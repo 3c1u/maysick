@@ -57,7 +57,9 @@ pub fn full_parse_program(input: &str) -> Result<Program, ANTLRError> {
 struct ASTBuilder {
     program: Program,
     stack_stmt: Vec<Stmt>,
+    stack_stack_stmt: Vec<Vec<Stmt>>,
     stack_expr: Vec<Expr>,
+    stack_stack_expr: Vec<Vec<Expr>>,
 }
 
 use antlr_rust::parser_rule_context::ParserRuleContext;
@@ -80,7 +82,10 @@ impl MaysickListener for ASTBuilder {
     }
 
     fn exit_ExprIdent_NumLiteral(&mut self, ctx: &ExprIdent_NumLiteralContext) {
-        todo!("parse number literal");
+        // todo!("parse number literal");
+        self.stack_expr.push(Expr::Literal(Literal::Integer(
+            i64::from_str_radix(&ctx.LIT_NUMBER().unwrap().get_text(), 10).unwrap(),
+        )));
     }
 
     fn exit_ExprIdent_StrLiteral(&mut self, ctx: &ExprIdent_StrLiteralContext) {
@@ -131,9 +136,106 @@ impl MaysickListener for ASTBuilder {
         self.construct_infix(Infix::OrOp)
     }
 
+    fn exit_IfExpr(&mut self, ctx: &IfExprContext) {
+        let cond = self.stack_expr.pop().unwrap();
+        let else_stmt = if ctx.else_stmt().is_some() {
+            self.stack_stmt.pop()
+        } else {
+            None
+        };
+        let block = if let Some(Stmt::Block(b)) = self.stack_stmt.pop() {
+            b
+        } else {
+            panic!("expected block");
+        };
+
+        self.stack_expr.push(Expr::If(Box::new(cond), block));
+    }
+
+    fn exit_WhileExpr(&mut self, ctx: &WhileExprContext) {
+        let cond = self.stack_expr.pop().unwrap();
+        let block = if let Some(Stmt::Block(b)) = self.stack_stmt.pop() {
+            b
+        } else {
+            panic!("expected block");
+        };
+
+        self.stack_expr.push(Expr::While(Box::new(cond), block));
+    }
+
+    fn exit_StmtAssgn(&mut self, ctx: &StmtAssgnContext) {
+        let name = ctx.IDENT().unwrap().get_text();
+        let value = self.stack_expr.pop().unwrap();
+        self.stack_stmt.push(Stmt::Subst(name, value));
+    }
+
+    fn exit_StmtLet(&mut self, ctx: &StmtLetContext) {
+        let name = ctx.IDENT().unwrap().get_text();
+        let value = self.stack_expr.pop().unwrap();
+        self.stack_stmt.push(Stmt::Let(name, None, value));
+    }
+
+    fn exit_StmtVar(&mut self, ctx: &StmtVarContext) {
+        let name = ctx.IDENT().unwrap().get_text();
+        let value = self.stack_expr.pop().unwrap();
+        self.stack_stmt.push(Stmt::Var(name, None, value));
+    }
+
+    fn exit_StmtRet(&mut self, ctx: &StmtRetContext) {
+        let value = if ctx.expr().is_some() {
+            self.stack_expr.pop()
+        } else {
+            None
+        };
+
+        self.stack_stmt.push(Stmt::Return(value));
+    }
+
+    fn exit_StmtFnDef(&mut self, ctx: &StmtFnDefContext) {
+        let name = ctx.IDENT_all();
+        let block = if let Some(Stmt::Block(b)) = self.stack_stmt.pop() {
+            b
+        } else {
+            panic!("expected block");
+        };
+
+        self.stack_stmt.push(Stmt::FnDef(
+            name[0].get_text(),
+            name.iter().skip(1).map(|v| v.get_text()).collect(),
+            block,
+        ));
+    }
+
     fn exit_StmtExpr(&mut self, _ctx: &StmtExprContext) {
         let e = self.stack_expr.pop().unwrap();
         self.stack_stmt.push(Stmt::Expr(e));
+    }
+
+    fn enter_Block_NonReturn(&mut self, _ctx: &Block_NonReturnContext) {
+        // FIXME: not called
+        // let s = std::mem::replace(&mut self.stack_stmt, vec![]);
+        // self.stack_stack_stmt.push(s);
+    }
+
+    fn exit_Block_NonReturn(&mut self, _ctx: &Block_NonReturnContext) {
+        let s = self.stack_stack_stmt.pop().unwrap();
+        let b = std::mem::replace(&mut self.stack_stmt, s);
+
+        self.stack_stmt.push(Stmt::Block(b));
+    }
+
+    fn enter_FnCall(&mut self, _ctx: &FnCallContext) {
+        // FIXME: not called
+        // let e = std::mem::replace(&mut self.stack_expr, vec![]);
+        // self.stack_stack_expr.push(e);
+    }
+
+    fn exit_FnCall(&mut self, ctx: &FnCallContext) {
+        let e = self.stack_stack_expr.pop().unwrap();
+        let args = std::mem::replace(&mut self.stack_expr, e);
+
+        self.stack_expr
+            .push(Expr::FnCall(ctx.IDENT().unwrap().get_text(), args));
     }
 
     fn exit_prog(&mut self, _ctx: &ProgContext) {
@@ -141,6 +243,14 @@ impl MaysickListener for ASTBuilder {
     }
 }
 
-impl ParseTreeListener for ASTBuilder {}
-
-// statement
+impl ParseTreeListener for ASTBuilder {
+    fn enter_every_rule(&mut self, ctx: &dyn ParserRuleContext) {
+        if ctx.get_rule_index() == par::RULE_fn_call {
+            let e = std::mem::replace(&mut self.stack_expr, vec![]);
+            self.stack_stack_expr.push(e);
+        } else if ctx.get_rule_index() == par::RULE_block {
+            let s = std::mem::replace(&mut self.stack_stmt, vec![]);
+            self.stack_stack_stmt.push(s);
+        }
+    }
+}
