@@ -113,9 +113,15 @@ impl MaysickListener for ASTBuilder {
         let lit = &lit[..lit.len() - 1][1..];
 
         // TODO: unescape string
+        use rustc_lexer::unescape::unescape_str;
+        let mut unescaped = String::new();
+        unescape_str(lit, &mut |_range, result| {
+            // Here we only check for errors. The actual unescaping is done later.
+            unescaped.push(result.unwrap());
+        });
 
         self.stack_expr
-            .push(Expr::Literal(Literal::String(lit.into())));
+            .push(Expr::Literal(Literal::String(unescaped)));
     }
 
     // expr_unary
