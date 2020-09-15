@@ -86,9 +86,23 @@ impl MaysickListener for ASTBuilder {
     }
 
     fn exit_ExprIdent_NumLiteral(&mut self, ctx: &ExprIdent_NumLiteralContext) {
-        // todo!("parse number literal");
+        // todo!("parse number literal")
+        let text = ctx.LIT_NUMBER().unwrap().get_text();
+        
+        let num = if text == "0" {
+            0
+        } else if text.starts_with("0x") {
+            i64::from_str_radix(&text[2..], 16).unwrap()
+        } else if text.starts_with("0b") {
+            i64::from_str_radix(&text[2..], 2).unwrap()
+        } else if text.starts_with("0") {
+            i64::from_str_radix(&text[1..], 8).unwrap()
+        } else {
+            i64::from_str_radix(&text, 10).unwrap()
+        };
+
         self.stack_expr.push(Expr::Literal(Literal::Integer(
-            i64::from_str_radix(&ctx.LIT_NUMBER().unwrap().get_text(), 10).unwrap(),
+            num,
         )));
     }
 
